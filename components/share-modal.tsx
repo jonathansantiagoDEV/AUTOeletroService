@@ -1,0 +1,119 @@
+'use client'
+
+import { Download, Mail, MessageCircle, Share2, X } from 'lucide-react'
+import type { ServiceRecord } from '@/lib/types'
+import { generatePDFBlob, pdfFileName } from '@/lib/pdf'
+import { useToast } from './toast'
+
+interface ShareModalProps {
+  record: ServiceRecord | null
+  onClose: () => void
+}
+
+function buildMessage(record: ServiceRecord): string {
+  const lines = [
+    '*AUTOSERVIÇOS*',
+    '',
+    `*Cliente:* ${record.clientName || '---'}`,
+  ]
+  if (record.plate) lines.push(`*Placa:* ${record.plate}`)
+  if (record.price) lines.push(`*Preço:* ${record.price}`)
+  if (record.schedule) {
+    lines.push(
+      `*Agendamento:* ${new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR')} às ${record.scheduleTime || '--:--'}`,
+    )
+  }
+  lines.push('', '*Descrição:*', record.noteText || 'Sem descrição')
+  return lines.join('\n')
+}
+
+export function ShareModal({ record, onClose }: ShareModalProps) {
+  const showToast = useToast()
+  if (!record) return null
+
+  function downloadPDF() {
+    try {
+      const blob = generatePDFBlob(record)
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = pdfFileName(record)
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+      showToast('✅ PDF baixado!', 'success')
+      onClose()
+    } catch {
+      showToast('❌ Erro ao gerar PDF', 'error')
+    }
+  }
+
+  function shareWhatsApp() {
+    const text = encodeURIComponent(buildMessage(record))
+    window.open(`https://wa.me/?text=${text}`, '_blank')
+    onClose()
+  }
+
+  function shareEmail() {
+    const subject = encodeURIComponent(`Autoserviços - ${record.clientName || 'Documento'}`)
+    const body = encodeURIComponent(buildMessage(record).replace(/\*/g, ''))
+    window.location.href = `mailto:?subject=${subject}&body=${body}`
+    onClose()
+  }
+
+  async function shareSystem() {
+    try {
+      const blob = generatePDFBlob(record)
+      const file = new File([blob], pdfFileName(record), { type: 'application/pdf' })
+      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
+      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record) })
+      } else if (nav.share) {
+        await nav.share({ title: 'Autoserviços', text: buildMessage(record) })
+      } else {
+        showToast('⚠️ Compartilhamento não suportado, baixando PDF', 'info')
+        downloadPDF()
+        return
+      }
+      onClose()
+    } catch {
+      // usuário cancelou
+    }
+  }
+
+  const options = [
+    { label: 'WhatsApp', icon: MessageCircle, action: shareWhatsApp, cls: 'bg-whatsapp text-white' },
+    { label: 'E-mail', icon: Mail, action: shareEmail, cls: 'bg-primary text-primary-foreground' },
+    { label: 'Compartilhar', icon: Share2, action: shareSystem, cls: 'bg-foreground text-background' },
+    { label: 'Baixar PDF', icon: Download, action: downloadPDF, cls: 'border border-border bg-background text-foreground' },
+  ]
+
+  return (
+    <div onClick={onClose} className="fixed inset-0 z-[4500] flex items-end justify-center bg-black/50 sm:items-center">
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="animate-fade-up w-full max-w-[480px] rounded-t-2xl bg-card p-4 sm:rounded-2xl"
+      >
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-foreground">Compartilhar</h2>
+          <button aria-label="Fechar" onClick={onClose} className="rounded-full p-1 text-muted-foreground hover:bg-background">
+            <X className="size-5" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          {options.map((o) => (
+            <button
+              key={o.label}
+              onClick={o.action}
+              className={`flex flex-col items-center gap-1.5 rounded-xl px-3 py-4 text-sm font-bold transition hover:opacity-90 ${o.cls}`}
+            >
+              <o.icon className="size-6" />
+              {o.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,128 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-inter), 'Inter', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-whatsapp: var(--whatsapp);
+
+  --radius-app: 12px;
+}
+
+:root {
+  color-scheme: light;
+  --background: #e8ecf0;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --muted-foreground: #666666;
+  --border: #d5dce4;
+  --primary: #8b1a1a;
+  --primary-dark: #5c0e0e;
+  --primary-foreground: #ffffff;
+  --success: #2e7d32;
+  --danger: #d32f2f;
+  --whatsapp: #25d366;
+  --shadow-app: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #0a0a0a;
+  --foreground: #e8e8e8;
+  --card: #141414;
+  --muted-foreground: #888888;
+  --border: #2a2a2a;
+  --shadow-app: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+    -webkit-tap-highlight-color: transparent;
+  }
+  html,
+  body {
+    background: #d5dce4;
+    color: var(--foreground);
+  }
+  .dark html,
+  .dark body {
+    background: #050505;
+  }
+}
+
+/* Scrollbar fino tematizado */
+.thin-scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 10px;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 0.25s ease;
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-in {
+  animation: slide-in 0.3s ease;
+}
+
+@keyframes zoom-in {
+  from {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-zoom-in {
+  animation: zoom-in 0.3s ease;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 1s infinite;
+}
