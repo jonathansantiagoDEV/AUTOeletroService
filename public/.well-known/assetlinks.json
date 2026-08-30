@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.vercel.aut_oeletro_service_vvir_mxfh26jer_jonathan_3415.twa",
+        "sha256_cert_fingerprints": ["CB:55:88:A9:5E:AA:5A:BF:FE:A3:7D:68:7D:D6:C6:99:3F:F3:22:C3:86:A9:47:F8:1E:FB:70:F9:0E:4E:79:99"]
+      }
+    }]
