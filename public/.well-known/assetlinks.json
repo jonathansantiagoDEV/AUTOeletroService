@@ -1,8 +1,1 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "app.vercel.aut_oeletro_service_vvir_mxfh26jer_jonathan_3415.twa",
-        "sha256_cert_fingerprints": ["CB:55:88:A9:5E:AA:5A:BF:FE:A3:7D:68:7D:D6:C6:99:3F:F3:22:C3:86:A9:47:F8:1E:FB:70:F9:0E:4E:79:99"]
-      }
-    }]
+ [{ "relation": ["delegate_permission/common.handle_all_urls"], "target": { "namespace": "android_app", "package_name": "app.vercel.aut_oeletro_service_vvir.twa", "sha256_cert_fingerprints": ["5D:0F:63:A0:2A:64:A2:1A:A0:FB:12:C1:0F:47:C1:96:2A:EA:8A:48:1E:0F:96:A6:EE:67:62:F9:67:EC:C5:A1"] } }]
