@@ -5,6 +5,7 @@ import { Bold, Camera, Italic, Palette, Type, Underline, X } from 'lucide-react'
 import type { ServiceRecord, TextStyle } from '@/lib/types'
 import { DEFAULT_TEXT_STYLE } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
+import { normalizeImageOrientation } from '@/lib/image'
 import { useToast } from './toast'
 
 const FONTS = ['Inter', 'Georgia', 'Courier New', 'Brush Script MT', 'Arial', 'Times New Roman']
@@ -64,14 +65,11 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
     if (!files) return
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith('image/')) return
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result
-        if (typeof result === 'string') {
-          setPhotos((prev) => [...prev, result])
-        }
-      }
-      reader.readAsDataURL(file)
+      normalizeImageOrientation(file)
+        .then((dataUrl) => setPhotos((prev) => [...prev, dataUrl]))
+        .catch(() => {
+          // Se a normalização falhar, ignora esta foto silenciosamente
+        })
     })
   }
 

@@ -7,6 +7,7 @@ import { Camera, CalendarDays, FileText, Plus, Search, Settings } from 'lucide-r
 import type { FontScale, ServiceRecord } from '@/lib/types'
 import { FONT_SCALE_VALUES } from '@/lib/types'
 import { createClient } from '@/lib/supabase/client'
+import { normalizeImageOrientation } from '@/lib/image'
 import {
   loadRecords,
   upsertRecord,
@@ -353,16 +354,15 @@ export function AutoservicosApp() {
         onChange={(e) => {
           const file = e.target.files?.[0]
           if (!file) return
-          const reader = new FileReader()
-          reader.onload = (ev) => {
-            const result = ev.target?.result
-            if (typeof result === 'string') {
-              setInitialPhotos([result])
+          normalizeImageOrientation(file)
+            .then((dataUrl) => {
+              setInitialPhotos([dataUrl])
               setEditing(null)
               setEditorOpen(true)
-            }
-          }
-          reader.readAsDataURL(file)
+            })
+            .catch(() => {
+              // Se a normalização falhar, não abre o editor com foto inválida
+            })
           e.target.value = ''
         }}
       />

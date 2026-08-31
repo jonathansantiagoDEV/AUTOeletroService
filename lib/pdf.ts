@@ -80,25 +80,42 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
     let xPos = margin
     let photoIndex = 0
     const maxPhotosPerRow = 3
-    const imgWidth = 50
-    const imgHeight = 40
+    // Caixa máxima reservada para cada foto. A foto é encaixada dentro dela
+    // respeitando sua proporção original (sem esticar/deformar), então fotos
+    // verticais (retrato) saem verticais no PDF, e horizontais saem horizontais.
+    const boxWidth = 50
+    const boxHeight = 40
     for (let i = 0; i < Math.min(photos.length, 6); i++) {
       try {
         const photo = photos[i]
         if (photo && typeof photo === 'string' && photo.length > 100) {
-          if (y + imgHeight > 280) {
+          if (y + boxHeight > 280) {
             doc.addPage()
             y = 20
             xPos = margin
             photoIndex = 0
           }
-          doc.addImage(photo, 'JPEG', xPos, y, imgWidth, imgHeight)
-          xPos += imgWidth + 5
+          let drawWidth = boxWidth
+          let drawHeight = boxHeight
+          let offsetX = 0
+          let offsetY = 0
+          try {
+            const props = doc.getImageProperties(photo)
+            const scale = Math.min(boxWidth / props.width, boxHeight / props.height)
+            drawWidth = props.width * scale
+            drawHeight = props.height * scale
+            offsetX = (boxWidth - drawWidth) / 2
+            offsetY = (boxHeight - drawHeight) / 2
+          } catch {
+            // se não conseguir ler as dimensões, usa a caixa cheia (comportamento antigo)
+          }
+          doc.addImage(photo, 'JPEG', xPos + offsetX, y + offsetY, drawWidth, drawHeight)
+          xPos += boxWidth + 5
           photoIndex++
           if (photoIndex >= maxPhotosPerRow) {
             photoIndex = 0
             xPos = margin
-            y += imgHeight + 5
+            y += boxHeight + 5
           }
         }
       } catch {
