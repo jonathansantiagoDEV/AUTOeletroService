@@ -340,9 +340,9 @@ export function AutoservicosApp() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         aria-label="Registrar com a câmera"
-        className="absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full bg-card text-red-700 dark:text-white shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 ring-primary/30 transition hover:scale-105 active:scale-95"
+        className="absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full bg-card text-red-600 dark:text-white shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 ring-primary/30 transition hover:scale-105 active:scale-95 [&_svg]:stroke-[2.5]"
       >
-        <Camera className="size-5" />
+        <Camera className="size-6" />
       </button>
       <input
         ref={cameraInputRef}
@@ -377,7 +377,7 @@ export function AutoservicosApp() {
         aria-label="Novo registro"
         className="absolute bottom-5 right-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_rgba(139,26,26,0.5)] transition hover:scale-105 hover:bg-primary-dark active:scale-95"
       >
-        <Plus className="size-7" />
+        <Plus className="size-6" />
       </button>
 
       {/* Modais */}
