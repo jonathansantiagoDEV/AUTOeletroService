@@ -30,25 +30,25 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
   return (
     <div
       onClick={() => onView(record)}
-      className={`animate-slide-in cursor-pointer rounded-app border bg-card p-3.5 shadow-[var(--shadow-app)] transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] ${
+      className={`animate-slide-in cursor-pointer rounded-app border bg-card p-4 shadow-[var(--shadow-app)] transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] ${
         record.schedule ? 'border-l-4 border-l-primary border-primary/40' : 'border-border'
       }`}
     >
-      <div className="mb-0.5 flex items-start justify-between gap-1.5">
+      <div className="mb-1 flex items-start justify-between gap-2">
         <div className="flex-1 break-words text-base font-bold text-foreground">
           <UserCircle className="mr-1.5 inline size-4 text-primary" />
           {record.clientName || 'Cliente'}
         </div>
-        <div className="flex shrink-0 gap-0.5">
+        <div className="flex shrink-0 gap-1">
           <button
             aria-label="Editar"
             onClick={(e) => {
               e.stopPropagation()
               onEdit(record)
             }}
-            className="rounded-full p-1.5 text-muted-foreground transition hover:bg-background hover:text-primary"
+            className="rounded-full p-2 text-muted-foreground transition hover:bg-background hover:text-primary"
           >
-            <Pencil className="size-4" />
+            <Pencil className="size-4.5" />
           </button>
           <button
             aria-label="Excluir"
@@ -56,9 +56,9 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               e.stopPropagation()
               onDelete(record.id)
             }}
-            className="rounded-full p-1.5 text-muted-foreground transition hover:bg-background hover:text-danger"
+            className="rounded-full p-2 text-muted-foreground transition hover:bg-background hover:text-danger"
           >
-            <Trash2 className="size-4" />
+            <Trash2 className="size-4.5" />
           </button>
           <button
             aria-label="Compartilhar"
@@ -66,36 +66,36 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               e.stopPropagation()
               onShare(record)
             }}
-            className="flex items-center gap-1 rounded-full bg-primary px-2 py-1 text-xs font-bold text-primary-foreground transition hover:bg-primary-dark"
+            className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition hover:bg-primary-dark"
           >
-            <Share2 className="size-3" />
+            <Share2 className="size-3.5" />
           </button>
         </div>
       </div>
 
       {(record.plate || record.price) && (
-        <div className="my-1 flex flex-wrap gap-1">
+        <div className="my-1.5 flex flex-wrap gap-1.5">
           {record.plate && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-px text-sm font-bold text-primary-foreground">
-              <Hash className="size-3" /> {record.plate}
+            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 text-sm font-bold text-primary-foreground">
+              <Hash className="size-3.5" /> {record.plate}
             </span>
           )}
           {record.price && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-success px-2.5 py-px text-sm font-bold text-white">
-              <DollarSign className="size-3" /> {record.price}
+            <span className="inline-flex items-center gap-1 rounded-full bg-success px-3 py-0.5 text-sm font-bold text-white">
+              <DollarSign className="size-3.5" /> {record.price}
             </span>
           )}
         </div>
       )}
 
       {record.noteText && (
-        <div className="my-1 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background px-2.5 py-1.5">
+        <div className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background px-2.5 py-1.5">
           <span style={styledText}>{record.noteText}</span>
         </div>
       )}
 
       {record.photos.length === 1 && (
-        <div className="my-1.5">
+        <div className="my-2">
           <img
             src={record.photos[0] || '/placeholder.svg'}
             alt="Foto do serviço"
@@ -109,7 +109,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
       )}
 
       {record.photos.length > 1 && (
-        <div className="my-1.5 grid grid-cols-4 gap-1.5">
+        <div className="my-2 grid grid-cols-4 gap-1.5">
           {shownPhotos.map((photo, i) => (
             <img
               key={i}
@@ -136,13 +136,13 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
         </div>
       )}
 
-      <div className="mt-0.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 border-t border-border pt-1.5 text-sm text-muted-foreground">
+      <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-border pt-1.5 text-sm text-muted-foreground">
         <span>
           <Clock className="mr-0.5 inline size-3.5 text-primary" /> {timeAgo(record.createdAt)}
         </span>
         {record.schedule && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-px text-sm font-bold text-primary-foreground">
-            <Bell className="size-3" /> {record.scheduleTime ? record.scheduleTime.slice(0, 5) : ''}
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-sm font-bold text-primary-foreground">
+            <Bell className="size-3.5" /> {record.scheduleTime ? record.scheduleTime.slice(0, 5) : ''}
           </span>
         )}
         {record.photos.length > 0 && (
