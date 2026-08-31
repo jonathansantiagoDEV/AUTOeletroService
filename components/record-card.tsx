@@ -94,8 +94,22 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
         </div>
       )}
 
-      {record.photos.length > 0 && (
-        <div className="my-1 flex flex-wrap gap-1.5">
+      {record.photos.length === 1 && (
+        <div className="my-1.5">
+          <img
+            src={record.photos[0] || '/placeholder.svg'}
+            alt="Foto do serviço"
+            onClick={(e) => {
+              e.stopPropagation()
+              onZoomPhoto(record.photos[0])
+            }}
+            className="aspect-video w-full cursor-pointer rounded-lg border border-border object-cover shadow-sm transition hover:opacity-90"
+          />
+        </div>
+      )}
+
+      {record.photos.length > 1 && (
+        <div className="my-1.5 grid grid-cols-4 gap-1.5">
           {shownPhotos.map((photo, i) => (
             <img
               key={i}
@@ -105,7 +119,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
                 e.stopPropagation()
                 onZoomPhoto(photo)
               }}
-              className="size-[60px] cursor-pointer rounded-lg border-2 border-border object-cover transition hover:scale-105 hover:border-primary"
+              className="aspect-square w-full cursor-pointer rounded-lg border border-border object-cover shadow-sm transition hover:scale-[1.03] hover:border-primary"
             />
           ))}
           {extra > 0 && (
@@ -114,7 +128,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
                 e.stopPropagation()
                 onView(record)
               }}
-              className="flex size-[60px] cursor-pointer items-center justify-center rounded-lg bg-primary text-lg font-bold text-primary-foreground transition hover:scale-105 hover:bg-primary-dark"
+              className="flex aspect-square w-full cursor-pointer items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground transition hover:scale-[1.03] hover:bg-primary-dark"
             >
               +{extra}
             </div>

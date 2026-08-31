@@ -1,88 +1,155 @@
 import { jsPDF } from 'jspdf'
 import type { ServiceRecord } from './types'
 
+const PRIMARY: [number, number, number] = [139, 26, 26] // #8B1A1A
+const PRIMARY_DARK: [number, number, number] = [92, 14, 14] // #5C0E0E
+const TEXT_DARK: [number, number, number] = [26, 26, 26]
+const TEXT_MUTED: [number, number, number] = [110, 110, 110]
+const LINE: [number, number, number] = [225, 225, 225]
+const ROW_ALT: [number, number, number] = [247, 247, 247]
+
 export function generatePDFBlob(record: ServiceRecord): Blob {
   const doc = new jsPDF('p', 'mm', 'a4')
+  const pageWidth = 210
+  const margin = 20
+  const contentWidth = pageWidth - margin * 2
 
-  // Cabeçalho
-  doc.setFillColor(139, 26, 26)
-  doc.rect(0, 0, 210, 30, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(22)
+  // ---------- Cabeçalho ----------
+  doc.setFillColor(...PRIMARY)
+  doc.rect(0, 0, pageWidth, 8, 'F')
+  // faixa diagonal decorativa (efeito "curvo" do modelo, feito com triângulo)
+  doc.setFillColor(...PRIMARY_DARK)
+  doc.triangle(pageWidth - 55, 0, pageWidth, 0, pageWidth, 40, 'F')
+
+  doc.setTextColor(...PRIMARY)
+  doc.setFontSize(24)
   doc.setFont('helvetica', 'bold')
-  doc.text('AUTOSERVICOS', 105, 18, { align: 'center' })
-  doc.setTextColor(200, 200, 200)
-  doc.setFontSize(10)
-  doc.text('Documento de Servico', 105, 26, { align: 'center' })
-  doc.setDrawColor(139, 26, 26)
-  doc.setLineWidth(0.5)
-  doc.line(20, 35, 190, 35)
+  doc.text('ORDEM DE SERVIÇO', margin, 26)
 
-  doc.setTextColor(50, 50, 50)
+  doc.setTextColor(...TEXT_MUTED)
+  doc.setFontSize(10)
+  doc.setFont('helvetica', 'normal')
+  const dateObj = new Date(record.createdAt)
+  doc.text('Nº ' + shortId(record.id) + '   |   Emitido em ' + dateObj.toLocaleDateString('pt-BR'), margin, 33)
+
+  // logo/nome da oficina no canto (sobre a faixa diagonal)
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.text('AUTOSERVIÇOS', pageWidth - margin, 20, { align: 'right' })
+
+  let y = 52
+
+  // ---------- Colunas: Oficina / Cliente ----------
+  const col1X = margin
+  const col2X = margin + contentWidth / 2 + 5
+
+  doc.setTextColor(...PRIMARY)
+  doc.setFontSize(10.5)
+  doc.setFont('helvetica', 'bold')
+  doc.text('AUTOSERVIÇOS', col1X, y)
+  doc.text('CLIENTE:', col2X, y)
+
+  doc.setDrawColor(...PRIMARY)
+  doc.setLineWidth(0.6)
+  doc.line(col1X, y + 1.5, col1X + 45, y + 1.5)
+  doc.line(col2X, y + 1.5, col2X + 45, y + 1.5)
+
+  y += 7
+  doc.setTextColor(...TEXT_DARK)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+
+  const clientLines = [
+    record.clientName || '---',
+    record.plate ? 'Placa: ' + record.plate : null,
+    record.schedule
+      ? 'Agendado: ' +
+        new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR') +
+        ' às ' +
+        (record.scheduleTime || '--:--')
+      : null,
+  ].filter(Boolean) as string[]
+
+  const oficinaLines = ['Documento de serviço', 'Gerado em ' + dateObj.toLocaleDateString('pt-BR')]
+
+  const rowsCount = Math.max(clientLines.length, oficinaLines.length)
+  for (let i = 0; i < rowsCount; i++) {
+    if (oficinaLines[i]) doc.text(oficinaLines[i], col1X, y)
+    if (clientLines[i]) doc.text(clientLines[i], col2X, y)
+    y += 6
+  }
+
+  y += 6
+
+  // ---------- Tabela: Serviço / Descrição / Valor ----------
+  const tableX = margin
+  const tableW = contentWidth
+  const colService = tableW * 0.28
+  const colDesc = tableW * 0.5
+  const colValue = tableW * 0.22
+
+  doc.setFillColor(...PRIMARY)
+  doc.rect(tableX, y, tableW, 9, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(9.5)
+  doc.setFont('helvetica', 'bold')
+  doc.text('SERVIÇO', tableX + 3, y + 6)
+  doc.text('DESCRIÇÃO', tableX + colService + 3, y + 6)
+  doc.text('VALOR', tableX + colService + colDesc + colValue / 2, y + 6, { align: 'center' })
+  y += 9
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9.5)
+  const descLines = doc.splitTextToSize(record.noteText || 'Sem descrição', colDesc - 6)
+  const rowHeight = Math.max(14, descLines.length * 5 + 6)
+
+  doc.setFillColor(...ROW_ALT)
+  doc.rect(tableX, y, tableW, rowHeight, 'F')
+  doc.setDrawColor(...LINE)
+  doc.rect(tableX, y, tableW, rowHeight)
+
+  doc.setTextColor(...TEXT_DARK)
+  doc.setFont('helvetica', 'bold')
+  doc.text('Serviço automotivo', tableX + 3, y + 6)
+  doc.setFont('helvetica', 'normal')
+  doc.text(descLines, tableX + colService + 3, y + 6)
+  doc.setFont('helvetica', 'bold')
+  doc.text(record.price ? 'R$ ' + record.price : '---', tableX + colService + colDesc + colValue / 2, y + rowHeight / 2 + 1.5, {
+    align: 'center',
+  })
+  y += rowHeight + 8
+
+  // ---------- Total em destaque ----------
+  doc.setFillColor(...PRIMARY)
+  doc.rect(tableX, y, tableW, 12, 'F')
+  doc.setTextColor(255, 255, 255)
   doc.setFontSize(12)
   doc.setFont('helvetica', 'bold')
-  let y = 45
-  const margin = 20
-  const lineHeight = 8
+  doc.text('VALOR TOTAL: ' + (record.price ? 'R$ ' + record.price : '---'), tableX + tableW / 2, y + 8, {
+    align: 'center',
+  })
+  y += 22
 
-  doc.text('DADOS DO CLIENTE', margin, y)
-  y += lineHeight + 2
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(11)
-  doc.text('Cliente: ' + (record.clientName || '---'), margin, y)
-  y += lineHeight
-  doc.text('Placa: ' + (record.plate || '---'), margin, y)
-  y += lineHeight
-  doc.text('Preco: ' + (record.price || '---'), margin, y)
-  y += lineHeight
-  if (record.schedule) {
-    doc.text(
-      'Agendamento: ' +
-        new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR') +
-        ' as ' +
-        (record.scheduleTime || '--:--'),
-      margin,
-      y,
-    )
-    y += lineHeight
-  }
-  const dateObj = new Date(record.createdAt)
-  doc.text(
-    'Criado em: ' +
-      dateObj.toLocaleDateString('pt-BR') +
-      ' as ' +
-      dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    margin,
-    y,
-  )
-  y += lineHeight + 4
-
-  doc.setFont('helvetica', 'bold')
-  doc.text('DESCRICAO DO SERVICO:', margin, y)
-  y += lineHeight
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  const textLines = doc.splitTextToSize(record.noteText || 'Sem descricao', 170)
-  doc.text(textLines, margin, y)
-  y += textLines.length * 5 + 4
-
+  // ---------- Fotos ----------
   const photos = record.photos || []
   if (photos.length > 0) {
     if (y > 250) {
       doc.addPage()
       y = 20
     }
+    doc.setTextColor(...PRIMARY)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(12)
-    doc.text('FOTOS DO SERVICO:', margin, y)
-    y += lineHeight + 2
+    doc.setFontSize(11)
+    doc.text('FOTOS DO SERVIÇO', margin, y)
+    doc.setDrawColor(...PRIMARY)
+    doc.line(margin, y + 1.5, margin + 45, y + 1.5)
+    y += 8
+
     doc.setFont('helvetica', 'normal')
     let xPos = margin
     let photoIndex = 0
     const maxPhotosPerRow = 3
-    // Caixa máxima reservada para cada foto. A foto é encaixada dentro dela
-    // respeitando sua proporção original (sem esticar/deformar), então fotos
-    // verticais (retrato) saem verticais no PDF, e horizontais saem horizontais.
     const boxWidth = 50
     const boxHeight = 40
     for (let i = 0; i < Math.min(photos.length, 6); i++) {
@@ -109,6 +176,8 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
           } catch {
             // se não conseguir ler as dimensões, usa a caixa cheia (comportamento antigo)
           }
+          doc.setDrawColor(...LINE)
+          doc.rect(xPos, y, boxWidth, boxHeight)
           doc.addImage(photo, 'JPEG', xPos + offsetX, y + offsetY, drawWidth, drawHeight)
           xPos += boxWidth + 5
           photoIndex++
@@ -125,23 +194,31 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
     if (photos.length > 6) {
       y += 5
       doc.setFontSize(8)
+      doc.setTextColor(...TEXT_MUTED)
       doc.text('+ ' + (photos.length - 6) + ' fotos adicionais', margin, y)
     }
     y += 10
   }
 
+  // ---------- Rodapé ----------
   if (y > 280) {
     doc.addPage()
     y = 20
   }
-  doc.setDrawColor(200, 200, 200)
-  doc.line(20, y + 10, 190, y + 10)
-  y += 16
-  doc.setFontSize(9)
-  doc.setTextColor(150, 150, 150)
-  doc.text('Documento gerado pelo Autoservicos', 105, y, { align: 'center' })
+  y = Math.max(y, 270)
+  doc.setDrawColor(...LINE)
+  doc.line(margin, y, pageWidth - margin, y)
+  y += 6
+  doc.setFontSize(8)
+  doc.setTextColor(...TEXT_MUTED)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Documento gerado pelo Autoserviços', pageWidth / 2, y, { align: 'center' })
 
   return doc.output('blob')
+}
+
+function shortId(id: string): string {
+  return (id || '').slice(-6).toUpperCase() || '000000'
 }
 
 export function pdfFileName(record: ServiceRecord): string {

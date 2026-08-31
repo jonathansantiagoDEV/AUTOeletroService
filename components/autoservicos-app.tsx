@@ -24,6 +24,7 @@ import { ViewRecordModal } from './view-record-modal'
 import { ShareModal } from './share-modal'
 import { PhotoZoom } from './photo-zoom'
 import { SettingsSidebar } from './settings-sidebar'
+import { ConfirmModal } from './confirm-modal'
 import { useToast } from './toast'
 
 export function AutoservicosApp() {
@@ -47,6 +48,8 @@ export function AutoservicosApp() {
   const [scheduleDate, setScheduleDate] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<ServiceRecord | null>(null)
+  const [clearAllOpen, setClearAllOpen] = useState(false)
 
   // Carregar usuário, registros e preferências
   useEffect(() => {
@@ -158,8 +161,16 @@ export function AutoservicosApp() {
     return true
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Excluir este registro?')) return
+  function handleDelete(id: string) {
+    const target = records.find((r) => r.id === id)
+    if (!target) return
+    setDeleteTarget(target)
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    const id = deleteTarget.id
+    setDeleteTarget(null)
     const ok = await deleteRecordRemote(id)
     if (!ok) {
       showToast('❌ Não foi possível excluir no banco de dados', 'error')
@@ -233,8 +244,12 @@ export function AutoservicosApp() {
     reader.readAsText(file)
   }
 
-  async function handleClearAll() {
-    if (!confirm('Apagar TODOS os registros? Esta ação não pode ser desfeita.')) return
+  function handleClearAll() {
+    setClearAllOpen(true)
+  }
+
+  async function confirmClearAll() {
+    setClearAllOpen(false)
     const ok = await clearAllRecords()
     if (!ok) {
       showToast('❌ Não foi possível apagar no banco de dados', 'error')
@@ -341,9 +356,9 @@ export function AutoservicosApp() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         aria-label="Registrar com a câmera"
-        className="absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full bg-card text-red-600 dark:text-white shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 ring-primary/30 transition hover:scale-105 active:scale-95 [&_svg]:stroke-[2.5]"
+        className="absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full bg-card text-primary shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 ring-primary/30 transition hover:scale-105 active:scale-95"
       >
-        <Camera className="size-6" />
+        <Camera className="size-5" />
       </button>
       <input
         ref={cameraInputRef}
@@ -377,7 +392,7 @@ export function AutoservicosApp() {
         aria-label="Novo registro"
         className="absolute bottom-5 right-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_rgba(139,26,26,0.5)] transition hover:scale-105 hover:bg-primary-dark active:scale-95"
       >
-        <Plus className="size-6" />
+        <Plus className="size-7" />
       </button>
 
       {/* Modais */}
@@ -419,6 +434,22 @@ export function AutoservicosApp() {
         onClearAll={handleClearAll}
         userEmail={user?.email ?? null}
         onLogout={handleLogout}
+      />
+      <ConfirmModal
+        open={!!deleteTarget}
+        title="Excluir registro"
+        message={`Deseja excluir seu registro ${deleteTarget?.clientName || 'sem nome'}?`}
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmModal
+        open={clearAllOpen}
+        title="Apagar todos os registros"
+        message="Esta ação vai apagar TODOS os seus registros e não pode ser desfeita. Deseja continuar?"
+        confirmLabel="Apagar tudo"
+        onConfirm={confirmClearAll}
+        onCancel={() => setClearAllOpen(false)}
       />
     </div>
   )
