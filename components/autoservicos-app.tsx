@@ -356,7 +356,11 @@ export function AutoservicosApp() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         aria-label="Registrar com a câmera"
-        className="absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full bg-card text-primary shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 ring-primary/30 transition hover:scale-105 active:scale-95"
+        className={`absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 transition hover:scale-105 active:scale-95 ${
+          dark 
+            ? 'bg-card text-white ring-white/30' 
+            : 'bg-card text-primary ring-primary/30'
+        }`}
       >
         <Camera className="size-5" />
       </button>
@@ -437,9 +441,11 @@ export function AutoservicosApp() {
       />
       <ConfirmModal
         open={!!deleteTarget}
-        title="Excluir registro"
-        message={`Deseja excluir seu registro ${deleteTarget?.clientName || 'sem nome'}?`}
-        confirmLabel="Excluir"
+        title="Excluir Registro"
+        message={`Tem certeza que deseja excluir o registro de "${deleteTarget?.clientName || 'Cliente sem nome'}"?`}
+        confirmLabel="Sim, excluir"
+        cancelLabel="Cancelar"
+        danger={true}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteTarget(null)}
       />
