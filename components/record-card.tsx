@@ -34,21 +34,21 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
         record.schedule ? 'border-l-4 border-l-primary border-primary/40' : 'border-border'
       }`}
     >
-      <div className="mb-1 flex items-start justify-between gap-2">
+      <div className="mb-1.5 flex items-start justify-between gap-3">
         <div className="flex-1 break-words text-base font-bold text-foreground">
           <UserCircle className="mr-1.5 inline size-4 text-primary" />
           {record.clientName || 'Cliente'}
         </div>
-        <div className="flex shrink-0 gap-1">
+        <div className="flex shrink-0 gap-2">
           <button
             aria-label="Editar"
             onClick={(e) => {
               e.stopPropagation()
               onEdit(record)
             }}
-            className="rounded-full p-2 text-muted-foreground transition hover:bg-background hover:text-primary"
+            className="rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-primary"
           >
-            <Pencil className="size-4.5" />
+            <Pencil className="size-5" />
           </button>
           <button
             aria-label="Excluir"
@@ -56,9 +56,9 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               e.stopPropagation()
               onDelete(record.id)
             }}
-            className="rounded-full p-2 text-muted-foreground transition hover:bg-background hover:text-danger"
+            className="rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-danger"
           >
-            <Trash2 className="size-4.5" />
+            <Trash2 className="size-5" />
           </button>
           <button
             aria-label="Compartilhar"
@@ -66,9 +66,9 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               e.stopPropagation()
               onShare(record)
             }}
-            className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground transition hover:bg-primary-dark"
+            className="flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-2 text-xs font-bold text-primary-foreground transition hover:bg-primary-dark"
           >
-            <Share2 className="size-3.5" />
+            <Share2 className="size-4" />
           </button>
         </div>
       </div>
