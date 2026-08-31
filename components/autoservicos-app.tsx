@@ -356,13 +356,13 @@ export function AutoservicosApp() {
       <button
         onClick={() => cameraInputRef.current?.click()}
         aria-label="Registrar com a câmera"
-        className={`absolute bottom-24 right-5 flex size-12 items-center justify-center rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 transition hover:scale-105 active:scale-95 ${
+        className={`absolute bottom-24 right-5 flex size-14 items-center justify-center rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 transition hover:scale-105 active:scale-95 ${
           dark 
             ? 'bg-card text-white ring-white/30' 
             : 'bg-card text-primary ring-primary/30'
         }`}
       >
-        <Camera className="size-5" />
+        <Camera className="size-6" />
       </button>
       <input
         ref={cameraInputRef}
