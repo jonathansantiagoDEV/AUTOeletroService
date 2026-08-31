@@ -141,8 +141,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
   }
 
   return (
-    <div className="fixed inset-0 z-[3000] flex items-center justify-center bg-black/50 p-4">
-      <div className="animate-fade-up flex max-h-[85vh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl bg-card">
+    <div className="fixed inset-0 z-[3000] flex h-[100dvh] items-center justify-center bg-black/50 p-4">
+      <div className="animate-fade-up flex max-h-[80dvh] w-full max-w-[480px] flex-col overflow-hidden rounded-2xl bg-card">
         <div className="flex items-center justify-between border-b border-border bg-primary px-4 py-3 text-primary-foreground">
           <h2 className="text-lg font-bold">{editing ? 'Editar registro' : 'Novo registro'}</h2>
           <button aria-label="Fechar" onClick={onClose} className="rounded-full p-1 hover:bg-white/20">
