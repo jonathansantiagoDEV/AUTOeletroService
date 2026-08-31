@@ -69,14 +69,11 @@ export function ShareModal({ record, onClose }: ShareModalProps) {
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
       if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
         await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record) })
-      } else if (nav.share) {
-        await nav.share({ title: 'Autoserviços', text: buildMessage(record) })
+        onClose()
       } else {
-        showToast('⚠️ Compartilhamento não suportado, baixando PDF', 'info')
+        showToast('📄 PDF baixado! Anexe o arquivo na conversa do WhatsApp', 'info')
         downloadPDF()
-        return
       }
-      onClose()
     } catch {
       // usuário cancelou
     }
