@@ -34,13 +34,15 @@ export default function LoginPage() {
     router.refresh()
   }
 
+const SITE_URL = 'https://aut-oeletro-service-vvir.vercel.app'
+
   async function handleGoogle() {
     setError(null)
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${SITE_URL}/auth/callback`,
       },
     })
     if (error) setError(traduzErro(error.message))

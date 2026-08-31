@@ -10,12 +10,19 @@ import { useToast } from './toast'
 const FONTS = ['Inter', 'Georgia', 'Courier New', 'Brush Script MT', 'Arial', 'Times New Roman']
 const COLORS = ['#1A1A1A', '#8B1A1A', '#2E7D32', '#1565C0', '#F57C00', '#6A1B9A', '#C2185B', '#00838F']
 
+// Aceita placa antiga (ABC1234) e Mercosul (ABC1D23)
+function isValidPlate(value: string): boolean {
+  const antiga = /^[A-Z]{3}[0-9]{4}$/
+  const mercosul = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/
+  return antiga.test(value) || mercosul.test(value)
+}
+
 interface RecordEditorModalProps {
   open: boolean
   editing: ServiceRecord | null
   initialPhotos?: string[]
   onClose: () => void
-  onSave: (record: ServiceRecord) => void
+  onSave: (record: ServiceRecord) => Promise<boolean> | void
 }
 
 export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSave }: RecordEditorModalProps) {
@@ -28,6 +35,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
   const [style, setStyle] = useState<TextStyle>(DEFAULT_TEXT_STYLE)
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
+  const [saving, setSaving] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -49,6 +57,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
     }
     setShowFonts(false)
     setShowColors(false)
+    setSaving(false)
   }, [open, editing, initialPhotos])
 
   function handleFiles(files: FileList | null) {
@@ -66,11 +75,41 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
     })
   }
 
-  function handleSave() {
+  function handlePriceChange(raw: string) {
+    // Mantém só dígitos e formata como moeda (R$ 0,00)
+    const digits = raw.replace(/\D/g, '')
+    if (!digits) {
+      setPrice('')
+      return
+    }
+    const cents = parseInt(digits, 10)
+    const formatted = (cents / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+    setPrice(formatted)
+  }
+
+  function handlePlateChange(raw: string) {
+    // Remove tudo que não é letra/número, limita a 7 caracteres, maiúsculo
+    const cleaned = raw
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '')
+      .slice(0, 7)
+    setPlate(cleaned)
+  }
+
+  async function handleSave() {
+    if (saving) return
     if (!clientName.trim() && !noteText.trim() && photos.length === 0) {
       showToast('❌ Preencha ao menos o nome ou a descrição', 'error')
       return
     }
+    if (plate.trim() && !isValidPlate(plate.trim())) {
+      showToast('❌ Placa inválida. Use o formato ABC1234 ou ABC1D23', 'error')
+      return
+    }
+    setSaving(true)
     const record: ServiceRecord = {
       id: editing?.id ?? genId(),
       clientName: clientName.trim(),
@@ -83,7 +122,11 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       scheduleTime: editing?.scheduleTime ?? null,
       createdAt: editing?.createdAt ?? new Date().toISOString(),
     }
-    onSave(record)
+    const result = await onSave(record)
+    // Se o salvamento falhou, destrava o botão para o usuário tentar de novo.
+    if (result === false) {
+      setSaving(false)
+    }
   }
 
   if (!open) return null
@@ -117,13 +160,15 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
             />
             <input
               value={plate}
-              onChange={(e) => setPlate(e.target.value.toUpperCase())}
-              placeholder="Placa"
+              onChange={(e) => handlePlateChange(e.target.value)}
+              placeholder="Placa (ABC1234 ou ABC1D23)"
+              maxLength={7}
               className="rounded-lg border border-border bg-background px-3 py-2.5 text-base uppercase text-foreground outline-none focus:border-primary"
             />
             <input
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => handlePriceChange(e.target.value)}
+              inputMode="numeric"
               placeholder="Preço (R$)"
               className="rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary"
             />
@@ -258,11 +303,15 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
         </div>
 
         <div className="flex gap-2 border-t border-border p-3">
-          <button onClick={onClose} className="flex-1 rounded-lg border border-border bg-background py-3 font-semibold text-foreground">
+          <button onClick={onClose} disabled={saving} className="flex-1 rounded-lg border border-border bg-background py-3 font-semibold text-foreground disabled:opacity-50">
             Cancelar
           </button>
-          <button onClick={handleSave} className="flex-[2] rounded-lg bg-primary py-3 font-bold text-primary-foreground hover:bg-primary-dark">
-            Salvar
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-[2] rounded-lg bg-primary py-3 font-bold text-primary-foreground hover:bg-primary-dark disabled:opacity-60"
+          >
+            {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </div>

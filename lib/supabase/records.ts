@@ -58,7 +58,7 @@ export async function getCurrentUser() {
   return user
 }
 
-export async function loadRecords(): Promise<ServiceRecord[]> {
+export async function loadRecords(): Promise<ServiceRecord[] | null> {
   const supabase = createClient()
   const { data, error } = await supabase
     .from(TABLE)
@@ -67,7 +67,7 @@ export async function loadRecords(): Promise<ServiceRecord[]> {
 
   if (error) {
     console.error('Erro ao carregar registros:', error.message)
-    return []
+    return null
   }
   return (data as ServiceRecordRow[]).map(rowToRecord)
 }

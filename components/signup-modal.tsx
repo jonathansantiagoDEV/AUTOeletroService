@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
+const SITE_URL = 'https://aut-oeletro-service-vvir.vercel.app'
+
 interface SignupModalProps {
   open: boolean
   onClose: () => void
@@ -47,7 +49,7 @@ export function SignupModal({ open, onClose, onSuccess }: SignupModalProps) {
       email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${SITE_URL}/auth/callback`,
       },
     })
 

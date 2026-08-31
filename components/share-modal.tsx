@@ -49,10 +49,27 @@ export function ShareModal({ record, onClose }: ShareModalProps) {
     }
   }
 
-  function shareWhatsApp() {
+  async function shareWhatsApp() {
+    // Tenta compartilhar o PDF de verdade primeiro (abre o WhatsApp já com o arquivo anexado).
+    try {
+      const blob = generatePDFBlob(record)
+      const file = new File([blob], pdfFileName(record), { type: 'application/pdf' })
+      const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
+      if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
+        await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record) })
+        onClose()
+        return
+      }
+    } catch {
+      // usuário cancelou o compartilhamento do arquivo
+      return
+    }
+    // Sem suporte a arquivo: baixa o PDF e abre o WhatsApp só com o texto,
+    // para o usuário anexar o PDF manualmente na conversa.
+    showToast('📄 PDF baixado! Anexe o arquivo na conversa do WhatsApp', 'info')
+    downloadPDF()
     const text = encodeURIComponent(buildMessage(record))
     window.open(`https://wa.me/?text=${text}`, '_blank')
-    onClose()
   }
 
   function shareEmail() {
@@ -71,6 +88,8 @@ export function ShareModal({ record, onClose }: ShareModalProps) {
         await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record) })
         onClose()
       } else {
+        // O sistema não suporta compartilhar o arquivo PDF diretamente (comum em apps
+        // empacotados). Baixamos o PDF para que o usuário anexe manualmente no WhatsApp.
         showToast('📄 PDF baixado! Anexe o arquivo na conversa do WhatsApp', 'info')
         downloadPDF()
       }

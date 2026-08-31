@@ -50,18 +50,39 @@ export function AutoservicosApp() {
   // Carregar usuário, registros e preferências
   useEffect(() => {
     const supabase = createClient()
+    let cancelled = false
 
-    async function init() {
-      const {
-        data: { user: currentUser },
-      } = await supabase.auth.getUser()
-      setUser(currentUser)
-
+    async function loadForUser(attempt = 1) {
       const remoteRecords = await loadRecords()
+      if (cancelled) return
+
+      if (remoteRecords === null) {
+        // Falha ao carregar (ex.: instabilidade de rede). NÃO apaga os registros
+        // que já estão na tela — tenta de novo automaticamente antes de desistir.
+        if (attempt < 3) {
+          setTimeout(() => loadForUser(attempt + 1), 1000 * attempt)
+        } else {
+          showToast('⚠️ Não foi possível atualizar os registros. Verifique sua conexão.', 'error')
+          setLoaded(true)
+        }
+        return
+      }
+
       setRecords(remoteRecords)
       setLoaded(true)
     }
-    init()
+
+    // Espera a sessão de login ser confirmada antes de buscar os registros,
+    // evitando que o banco negue o acesso por a sessão ainda não estar pronta.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (cancelled) return
+      setUser(session?.user ?? null)
+      if (session?.user) {
+        loadForUser()
+      } else {
+        setLoaded(true)
+      }
+    })
 
     const savedDark = localStorage.getItem('autoservicos_dark') === '1'
     const savedScale = (localStorage.getItem('autoservicos_scale') as FontScale) || 'normal'
@@ -70,13 +91,18 @@ export function AutoservicosApp() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
       if (!session?.user) {
         router.replace('/login')
+      } else if (event === 'SIGNED_IN') {
+        loadForUser()
       }
     })
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [router])
 
   async function handleLogout() {
@@ -114,11 +140,11 @@ export function AutoservicosApp() {
     )
   }, [records, search])
 
-  async function handleSaveRecord(record: ServiceRecord) {
+  async function handleSaveRecord(record: ServiceRecord): Promise<boolean> {
     const ok = await upsertRecord(record)
     if (!ok) {
       showToast('❌ Não foi possível salvar no banco de dados', 'error')
-      return
+      return false
     }
     setRecords((prev) => {
       const exists = prev.some((r) => r.id === record.id)
@@ -128,6 +154,7 @@ export function AutoservicosApp() {
     setEditing(null)
     setViewing(null)
     showToast(editing ? '✅ Registro atualizado!' : '✅ Registro salvo!', 'success')
+    return true
   }
 
   async function handleDelete(id: string) {
