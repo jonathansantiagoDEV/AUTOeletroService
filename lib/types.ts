@@ -67,6 +67,7 @@ export interface ServiceRecord {
   status: ServiceStatus
   category: ServiceCategory | null
   signature: string | null
+  warrantyUntil: string | null
   createdAt: string
 }
 
@@ -82,6 +83,30 @@ export function scheduleDateTime(record: Pick<ServiceRecord, 'schedule' | 'sched
 export function isPendingSchedule(record: Pick<ServiceRecord, 'schedule' | 'scheduleTime'>, now: Date = new Date()): boolean {
   const dt = scheduleDateTime(record)
   return dt !== null && dt.getTime() > now.getTime()
+}
+
+// Quantos dias faltam de garantia (número negativo = já venceu). Retorna null se não houver garantia definida.
+export function warrantyDaysRemaining(record: Pick<ServiceRecord, 'warrantyUntil'>, now: Date = new Date()): number | null {
+  if (!record.warrantyUntil) return null
+  const end = new Date(`${record.warrantyUntil}T23:59:59`)
+  if (isNaN(end.getTime())) return null
+  return Math.ceil((end.getTime() - now.getTime()) / 86400000)
+}
+
+// Garantia vencida
+export function isWarrantyExpired(record: Pick<ServiceRecord, 'warrantyUntil'>, now: Date = new Date()): boolean {
+  const days = warrantyDaysRemaining(record, now)
+  return days !== null && days < 0
+}
+
+// Garantia perto de vencer (padrão: 7 dias ou menos, mas ainda não vencida)
+export function isWarrantyExpiringSoon(
+  record: Pick<ServiceRecord, 'warrantyUntil'>,
+  daysThreshold = 7,
+  now: Date = new Date(),
+): boolean {
+  const days = warrantyDaysRemaining(record, now)
+  return days !== null && days >= 0 && days <= daysThreshold
 }
 
 export const DEFAULT_TEXT_STYLE: TextStyle = {

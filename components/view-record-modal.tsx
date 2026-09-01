@@ -1,8 +1,8 @@
 'use client'
 
-import { Bell, Calendar, DollarSign, Hash, History, Pencil, Share2, X } from 'lucide-react'
+import { Bell, Calendar, DollarSign, Hash, History, Pencil, Share2, ShieldAlert, ShieldCheck, X } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
-import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE } from '@/lib/types'
+import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, isWarrantyExpired, isWarrantyExpiringSoon, warrantyDaysRemaining } from '@/lib/types'
 import { fullDateTime } from '@/lib/format'
 
 interface ViewRecordModalProps {
@@ -16,6 +16,10 @@ interface ViewRecordModalProps {
 
 export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto, onShowHistory }: ViewRecordModalProps) {
   if (!record) return null
+
+  const warrantyExpired = isWarrantyExpired(record)
+  const warrantyExpiringSoon = !warrantyExpired && isWarrantyExpiringSoon(record)
+  const warrantyDays = warrantyDaysRemaining(record)
 
   // Cor padrão (não escolhida manualmente pelo usuário) segue o tema
   // claro/escuro em vez de ficar travada em cinza-escuro (#1A1A1A).
@@ -60,6 +64,24 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto,
             {record.category && (
               <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 px-3 py-1 text-sm font-bold text-primary">
                 {CATEGORY_LABELS[record.category]}
+              </span>
+            )}
+            {(warrantyExpired || warrantyExpiringSoon) && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-bold text-white ${
+                  warrantyExpired ? 'bg-danger' : 'bg-orange-500'
+                }`}
+              >
+                {warrantyExpired ? (
+                  <>
+                    <ShieldAlert className="size-3.5" /> Garantia vencida
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="size-3.5" />
+                    Garantia vence {warrantyDays === 0 ? 'hoje' : `em ${warrantyDays}d`}
+                  </>
+                )}
               </span>
             )}
           </div>

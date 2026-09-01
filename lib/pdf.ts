@@ -82,6 +82,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
     'Gerado em ' + dateStr,
     record.category ? `Categoria: ${CATEGORY_LABELS[record.category]}` : null,
     record.schedule ? `Agendado: ${new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR')} ${record.scheduleTime || ''}` : null,
+    record.warrantyUntil ? `Garantia até: ${new Date(record.warrantyUntil + 'T00:00:00').toLocaleDateString('pt-BR')}` : null,
   ].filter(Boolean) as string[]
   
   oficinaInfo.forEach(line => {

@@ -1,8 +1,9 @@
 'use client'
 
-import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, Pencil, Phone, Share2, Trash2, UserCircle } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, Pencil, Phone, Share2, ShieldAlert, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
-import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
+import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS, isWarrantyExpired, isWarrantyExpiringSoon, warrantyDaysRemaining } from '@/lib/types'
 import { timeAgo } from '@/lib/format'
 
 interface RecordCardProps {
@@ -16,13 +17,22 @@ interface RecordCardProps {
 }
 
 export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPhoto, alerting }: RecordCardProps) {
-  const maxShow = 4
-  const shownPhotos = record.photos.slice(0, maxShow)
-  const extra = record.photos.length - maxShow
+  const [activePhotoIndex, setActivePhotoIndex] = useState(0)
+  const carouselRef = useRef<HTMLDivElement>(null)
 
-  // Cor padrão (não escolhida manualmente pelo usuário) segue o tema
-  // claro/escuro em vez de ficar travada em cinza-escuro (#1A1A1A).
+  const handleScroll = () => {
+    if (!carouselRef.current) return
+    const { scrollLeft, clientWidth } = carouselRef.current
+    if (clientWidth > 0) {
+      const index = Math.round(scrollLeft / clientWidth)
+      setActivePhotoIndex(index)
+    }
+  }
+
   const usingDefaultColor = record.textStyle.color === DEFAULT_TEXT_STYLE.color
+  const warrantyExpired = isWarrantyExpired(record)
+  const warrantyExpiringSoon = !warrantyExpired && isWarrantyExpiringSoon(record)
+  const warrantyDays = warrantyDaysRemaining(record)
   const styledText: React.CSSProperties = {
     fontFamily: `'${record.textStyle.fontFamily}', sans-serif`,
     color: usingDefaultColor ? undefined : record.textStyle.color,
@@ -143,43 +153,53 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
         </div>
       )}
 
-      {record.photos.length === 1 && (
-        <div className="my-2">
-          <img
-            src={record.photos[0] || '/placeholder.svg'}
-            alt="Foto do serviço"
-            onClick={(e) => {
-              e.stopPropagation()
-              onZoomPhoto(record.photos[0])
-            }}
-            className="aspect-video w-full cursor-pointer rounded-lg border border-border object-cover shadow-sm transition hover:opacity-90"
-          />
-        </div>
-      )}
+      {/* Carrossel Estilo Instagram - Forçando 100% da largura por item */}
+      {record.photos && record.photos.length > 0 && (
+        <div className="relative my-3 w-full overflow-hidden rounded-xl">
+          <div
+            ref={carouselRef}
+            onScroll={handleScroll}
+            className="flex w-full snap-x snap-mandatory overflow-x-auto"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {record.photos.map((photo, i) => (
+              <div
+                key={i}
+                className="w-full min-w-full flex-shrink-0 snap-center"
+              >
+                <img
+                  src={photo || '/placeholder.svg'}
+                  alt={`Foto ${i + 1}`}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onZoomPhoto(photo)
+                  }}
+                  className="aspect-square w-full cursor-pointer rounded-xl border border-border object-cover shadow-sm transition hover:opacity-95"
+                />
+              </div>
+            ))}
+          </div>
 
-      {record.photos.length > 1 && (
-        <div className="my-2 grid grid-cols-4 gap-1.5">
-          {shownPhotos.map((photo, i) => (
-            <img
-              key={i}
-              src={photo || '/placeholder.svg'}
-              alt={`Foto ${i + 1}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onZoomPhoto(photo)
-              }}
-              className="aspect-square w-full cursor-pointer rounded-lg border border-border object-cover shadow-sm transition hover:scale-[1.03] hover:border-primary"
-            />
-          ))}
-          {extra > 0 && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation()
-                onView(record)
-              }}
-              className="flex aspect-square w-full cursor-pointer items-center justify-center rounded-lg bg-primary text-base font-bold text-primary-foreground transition hover:scale-[1.03] hover:bg-primary-dark"
-            >
-              +{extra}
+          {/* Tag de Contagem no Canto Superior */}
+          {record.photos.length > 1 && (
+            <div className="absolute right-3 top-3 rounded-full bg-black/75 px-2.5 py-1 text-[11px] font-bold text-white backdrop-blur-sm pointer-events-none">
+              {activePhotoIndex + 1}/{record.photos.length}
+            </div>
+          )}
+
+          {/* Indicadores estilo Instagram */}
+          {record.photos.length > 1 && (
+            <div className="mt-2 flex items-center justify-center gap-1.5">
+              {record.photos.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    activePhotoIndex === idx
+                      ? 'w-4 bg-primary'
+                      : 'w-1.5 bg-muted-foreground/40'
+                  }`}
+                />
+              ))}
             </div>
           )}
         </div>
@@ -192,6 +212,24 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
         {record.schedule && (
           <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-sm font-bold text-primary-foreground">
             <Bell className="size-3.5" /> {record.scheduleTime ? record.scheduleTime.slice(0, 5) : ''}
+          </span>
+        )}
+        {(warrantyExpired || warrantyExpiringSoon) && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-sm font-bold text-white ${
+              warrantyExpired ? 'bg-danger' : 'bg-orange-500'
+            }`}
+          >
+            {warrantyExpired ? (
+              <>
+                <ShieldAlert className="size-3.5" /> Garantia vencida
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="size-3.5" />
+                Garantia vence {warrantyDays === 0 ? 'hoje' : `em ${warrantyDays}d`}
+              </>
+            )}
           </span>
         )}
         {record.photos.length > 0 && (
