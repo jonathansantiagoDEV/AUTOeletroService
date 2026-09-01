@@ -2,7 +2,7 @@
 
 import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, Pencil, Phone, Share2, Trash2, UserCircle } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
-import { DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
+import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { timeAgo } from '@/lib/format'
 
 interface RecordCardProps {
@@ -12,9 +12,10 @@ interface RecordCardProps {
   onDelete: (id: string) => void
   onShare: (record: ServiceRecord) => void
   onZoomPhoto: (photo: string) => void
+  alerting?: boolean
 }
 
-export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPhoto }: RecordCardProps) {
+export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPhoto, alerting }: RecordCardProps) {
   const maxShow = 4
   const shownPhotos = record.photos.slice(0, maxShow)
   const extra = record.photos.length - maxShow
@@ -35,9 +36,18 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
     <div
       onClick={() => onView(record)}
       className={`animate-slide-in cursor-pointer rounded-app border bg-card p-4 shadow-[var(--shadow-app)] transition-all hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] ${
-        record.schedule ? 'border-l-4 border-l-primary border-primary/40' : 'border-border'
+        alerting
+          ? 'animate-alert-blink border-2 border-danger'
+          : record.schedule
+            ? 'border-l-4 border-l-primary border-primary/40'
+            : 'border-border'
       }`}
     >
+      {alerting && (
+        <div className="mb-2 flex items-center gap-1.5 rounded-lg bg-danger px-2.5 py-1.5 text-xs font-bold text-white">
+          <Bell className="size-3.5 animate-pulse-dot" /> Chegou a hora do agendamento!
+        </div>
+      )}
       <div className="mb-1.5 flex items-start justify-between gap-3">
         <div className="flex flex-1 flex-wrap items-center gap-1.5 break-words text-base font-bold text-foreground">
           <UserCircle className="inline size-4 text-primary" />
@@ -48,6 +58,11 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
           >
             {STATUS_LABELS[record.status ?? 'em_andamento']}
           </span>
+          {record.category && (
+            <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[10px] font-bold text-primary">
+              {CATEGORY_LABELS[record.category]}
+            </span>
+          )}
         </div>
         <div className="flex shrink-0 gap-2">
           {record.clientPhone && (

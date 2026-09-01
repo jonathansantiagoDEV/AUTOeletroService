@@ -45,6 +45,7 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
     const record: ServiceRecord = {
       id: generateId(),
       clientName: client.trim(),
+      clientPhone: '',
       plate: plate.trim().toUpperCase(),
       price: '',
       noteText: note.trim() || 'Agendamento via calendário',
@@ -52,6 +53,9 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
       textStyle: { ...DEFAULT_TEXT_STYLE },
       schedule: dateStr,
       scheduleTime: time,
+      status: 'em_andamento',
+      category: null,
+      signature: null,
       createdAt: new Date().toISOString(),
     }
     onSave(record)

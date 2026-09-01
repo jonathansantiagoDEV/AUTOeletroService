@@ -1,8 +1,8 @@
 'use client'
 
-import { Bell, Calendar, DollarSign, Hash, Pencil, Share2, X } from 'lucide-react'
+import { Bell, Calendar, DollarSign, Hash, History, Pencil, Share2, X } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
-import { DEFAULT_TEXT_STYLE } from '@/lib/types'
+import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE } from '@/lib/types'
 import { fullDateTime } from '@/lib/format'
 
 interface ViewRecordModalProps {
@@ -11,9 +11,10 @@ interface ViewRecordModalProps {
   onEdit: (record: ServiceRecord) => void
   onShare: (record: ServiceRecord) => void
   onZoomPhoto: (photo: string) => void
+  onShowHistory?: (record: ServiceRecord) => void
 }
 
-export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto }: ViewRecordModalProps) {
+export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto, onShowHistory }: ViewRecordModalProps) {
   if (!record) return null
 
   // Cor padrão (não escolhida manualmente pelo usuário) segue o tema
@@ -56,6 +57,11 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto 
                 {new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR')} {record.scheduleTime?.slice(0, 5)}
               </span>
             )}
+            {record.category && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-primary/40 px-3 py-1 text-sm font-bold text-primary">
+                {CATEGORY_LABELS[record.category]}
+              </span>
+            )}
           </div>
 
           {record.noteText && (
@@ -80,9 +86,31 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto 
             </div>
           )}
 
+          {record.signature && (
+            <div className="rounded-lg border border-border bg-background p-2.5">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Assinatura do cliente
+              </p>
+              <img
+                src={record.signature}
+                alt="Assinatura do cliente"
+                className="h-16 w-full max-w-[200px] rounded border border-border bg-white object-contain"
+              />
+            </div>
+          )}
+
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <Calendar className="size-3.5 text-primary" /> Criado em {fullDateTime(record.createdAt)}
           </p>
+
+          {onShowHistory && (record.plate || record.clientName) && (
+            <button
+              onClick={() => onShowHistory(record)}
+              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-primary/50 py-2.5 text-sm font-semibold text-primary"
+            >
+              <History className="size-4" /> Ver histórico deste cliente
+            </button>
+          )}
         </div>
 
         <div className="flex gap-2 border-t border-border p-3">

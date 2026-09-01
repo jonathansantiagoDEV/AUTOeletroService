@@ -1,6 +1,6 @@
 import { jsPDF } from 'jspdf'
 import type { ServiceRecord } from './types'
-import { STATUS_LABELS } from './types'
+import { CATEGORY_LABELS, STATUS_LABELS } from './types'
 
 // Cores baseadas no modelo (azul e laranja)
 const PRIMARY: [number, number, number] = [0, 82, 155] // Azul #00529B
@@ -80,6 +80,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   const oficinaInfo = [
     'Documento de serviço',
     'Gerado em ' + dateStr,
+    record.category ? `Categoria: ${CATEGORY_LABELS[record.category]}` : null,
     record.schedule ? `Agendado: ${new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR')} ${record.scheduleTime || ''}` : null,
   ].filter(Boolean) as string[]
   
@@ -248,6 +249,33 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
       y = rowY + 10
     } else {
       y = rowY + boxSize + 10
+    }
+  }
+
+  // ============================================================
+  // 5b. ASSINATURA DO CLIENTE
+  // ============================================================
+
+  if (record.signature) {
+    if (y > 240) {
+      doc.addPage()
+      y = 20
+    }
+    doc.setTextColor(...PRIMARY)
+    doc.setFontSize(11)
+    doc.setFont('helvetica', 'bold')
+    doc.text('ASSINATURA DO CLIENTE', margin, y)
+    y += 4
+    try {
+      const sigW = 55
+      const sigH = 24
+      doc.setDrawColor(...LINE)
+      doc.setLineWidth(0.3)
+      doc.rect(margin, y, sigW, sigH)
+      doc.addImage(record.signature, 'PNG', margin + 0.5, y + 0.5, sigW - 1, sigH - 1)
+      y += sigH + 8
+    } catch {
+      // ignora assinatura inválida
     }
   }
 

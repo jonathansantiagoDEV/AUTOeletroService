@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bold, Camera, Image as GalleryIcon, Italic, Palette, Type, Underline, X } from 'lucide-react'
-import type { ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
-import { DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
+import { Bold, Camera, Image as GalleryIcon, Italic, Palette, PenLine, Type, Underline, X } from 'lucide-react'
+import type { ServiceCategory, ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
+import { CATEGORY_LABELS, CATEGORY_ORDER, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
 import { normalizeImageOrientation } from '@/lib/image'
+import { SignaturePad } from './signature-pad'
 import { useToast } from './toast'
 
 const FONTS = ['Inter', 'Georgia', 'Courier New', 'Brush Script MT', 'Arial', 'Times New Roman']
@@ -36,6 +37,9 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
   const [photos, setPhotos] = useState<string[]>([])
   const [style, setStyle] = useState<TextStyle>(DEFAULT_TEXT_STYLE)
   const [status, setStatus] = useState<ServiceStatus>('em_andamento')
+  const [category, setCategory] = useState<ServiceCategory | null>(null)
+  const [signature, setSignature] = useState<string | null>(null)
+  const [signatureOpen, setSignatureOpen] = useState(false)
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -53,6 +57,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       setPhotos(editing.photos)
       setStyle(editing.textStyle ?? DEFAULT_TEXT_STYLE)
       setStatus(editing.status ?? 'em_andamento')
+      setCategory(editing.category ?? null)
+      setSignature(editing.signature ?? null)
     } else {
       setClientName('')
       setClientPhone('')
@@ -62,6 +68,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       setPhotos(initialPhotos && initialPhotos.length > 0 ? initialPhotos : [])
       setStyle(DEFAULT_TEXT_STYLE)
       setStatus('em_andamento')
+      setCategory(null)
+      setSignature(null)
     }
     setShowFonts(false)
     setShowColors(false)
@@ -136,6 +144,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       schedule: editing?.schedule ?? null,
       scheduleTime: editing?.scheduleTime ?? null,
       status,
+      category,
+      signature,
       createdAt: editing?.createdAt ?? new Date().toISOString(),
     }
     const result = await onSave(record)
@@ -218,6 +228,24 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
                 }
               >
                 {STATUS_LABELS[key]}
+              </button>
+            ))}
+          </div>
+
+          {/* Categoria do serviço */}
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORY_ORDER.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setCategory((c) => (c === key ? null : key))}
+                className={`rounded-full border px-2.5 py-1 text-xs font-semibold transition ${
+                  category === key
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background text-muted-foreground'
+                }`}
+              >
+                {CATEGORY_LABELS[key]}
               </button>
             ))}
           </div>
@@ -379,6 +407,42 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
               }}
             />
           </div>
+
+          {/* Assinatura do cliente */}
+          <div className="rounded-lg border border-border bg-background p-2.5">
+            {signature ? (
+              <div className="flex items-center gap-3">
+                <img src={signature} alt="Assinatura do cliente" className="h-12 w-24 rounded border border-border bg-white object-contain" />
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <span className="text-xs font-semibold text-success">Assinatura coletada</span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSignatureOpen(true)}
+                      className="text-xs font-semibold text-primary underline"
+                    >
+                      Refazer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSignature(null)}
+                      className="text-xs font-semibold text-danger underline"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSignatureOpen(true)}
+                className="flex w-full items-center justify-center gap-2 py-1 text-sm font-semibold text-primary"
+              >
+                <PenLine className="size-4" /> Coletar assinatura do cliente
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-2 border-t border-border p-3">
@@ -394,6 +458,14 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
           </button>
         </div>
       </div>
+      <SignaturePad
+        open={signatureOpen}
+        onClose={() => setSignatureOpen(false)}
+        onSave={(dataUrl) => {
+          setSignature(dataUrl)
+          setSignatureOpen(false)
+        }}
+      />
     </div>
   )
 }

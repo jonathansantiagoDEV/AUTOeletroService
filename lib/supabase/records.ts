@@ -1,4 +1,4 @@
-import type { ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
+import type { ServiceCategory, ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
 import { DEFAULT_TEXT_STYLE } from '@/lib/types'
 import { createClient } from './client'
 
@@ -18,6 +18,8 @@ interface ServiceRecordRow {
   schedule: string | null
   schedule_time: string | null
   status: string | null
+  category: string | null
+  signature: string | null
   created_at: string
 }
 
@@ -34,6 +36,8 @@ function rowToRecord(row: ServiceRecordRow): ServiceRecord {
     schedule: row.schedule,
     scheduleTime: row.schedule_time,
     status: (row.status as ServiceStatus) ?? 'em_andamento',
+    category: (row.category as ServiceCategory) ?? null,
+    signature: row.signature ?? null,
     createdAt: row.created_at,
   }
 }
@@ -52,6 +56,8 @@ function recordToRow(record: ServiceRecord, userId: string) {
     schedule: record.schedule,
     schedule_time: record.scheduleTime,
     status: record.status,
+    category: record.category ?? null,
+    signature: record.signature ?? null,
     created_at: record.createdAt,
   }
 }

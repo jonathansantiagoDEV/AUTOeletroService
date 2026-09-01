@@ -3,13 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { Camera, CalendarDays, FileText, Plus, Search, Settings, Bell } from 'lucide-react'
-import type { FontScale, ServiceRecord } from '@/lib/types'
-import { FONT_SCALE_VALUES } from '@/lib/types'
+import { Camera, CalendarDays, CalendarClock, FileText, Plus, Search, Settings, Bell } from 'lucide-react'
+import type { FontScale, ServiceCategory, ServiceRecord, ServiceStatus } from '@/lib/types'
+import { CATEGORY_LABELS, CATEGORY_ORDER, FONT_SCALE_VALUES, STATUS_LABELS, isPendingSchedule } from '@/lib/types'
 import { parseCurrency } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import { normalizeImageOrientation } from '@/lib/image'
 import { generateBulkReportBlob } from '@/lib/pdf'
+import { playAlertSound, unlockAudio } from '@/lib/alert-sound'
 import {
   loadRecords,
   upsertRecord,
@@ -21,14 +22,18 @@ import { Logo } from './logo'
 import { RecordCard } from './record-card'
 import { RecordEditorModal } from './record-editor-modal'
 import { CalendarPanel } from './calendar-panel'
+import { AgendaPage } from './agenda-page'
 import { ScheduleModal } from './schedule-modal'
 import { ViewRecordModal } from './view-record-modal'
+import { ClientHistoryModal } from './client-history-modal'
 import { ShareModal } from './share-modal'
 import { PhotoZoom } from './photo-zoom'
 import { SettingsSidebar } from './settings-sidebar'
 import { OnboardingModal } from './onboarding-modal'
 import { ConfirmModal } from './confirm-modal'
 import { useToast } from './toast'
+
+const ALERTED_STORAGE_KEY = 'autoservicos_alerted_schedules'
 
 export function AutoservicosApp() {
   const showToast = useToast()
@@ -37,6 +42,13 @@ export function AutoservicosApp() {
   const [records, setRecords] = useState<ServiceRecord[]>([])
   const [loaded, setLoaded] = useState(false)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<ServiceStatus | 'todos'>('todos')
+  const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | 'todas'>('todas')
+
+  const [agendaOpen, setAgendaOpen] = useState(false)
+  const [historyFor, setHistoryFor] = useState<ServiceRecord | null>(null)
+  const [blinkingIds, setBlinkingIds] = useState<Set<string>>(new Set())
+  const alertedRef = useRef<Set<string>>(new Set())
 
   const [dark, setDark] = useState(false)
   const [fontScale, setFontScale] = useState<FontScale>('normal')
@@ -59,6 +71,73 @@ export function AutoservicosApp() {
       setOnboardingOpen(true)
     }
   }, [])
+
+  // Carrega do localStorage quais agendamentos já dispararam alerta, para não repetir
+  // o som/piscar toda vez que o app é reaberto.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const saved = JSON.parse(localStorage.getItem(ALERTED_STORAGE_KEY) || '[]') as string[]
+      alertedRef.current = new Set(saved)
+    } catch {
+      alertedRef.current = new Set()
+    }
+    // Libera o áudio na primeira interação do usuário (alguns navegadores bloqueiam som automático)
+    const unlock = () => unlockAudio()
+    window.addEventListener('pointerdown', unlock, { once: true })
+    return () => window.removeEventListener('pointerdown', unlock)
+  }, [])
+
+  // Verifica periodicamente se algum agendamento pendente acabou de chegar na hora.
+  // Quando isso acontece, o registro passa a aparecer na tela principal (deixa de ser
+  // "pendente") e piscamos o card + tocamos um alerta sonoro para chamar atenção.
+  useEffect(() => {
+    if (!loaded) return
+
+    function checkDue() {
+      const now = new Date()
+      const justDue: string[] = []
+      records.forEach((r) => {
+        if (!r.schedule || !r.scheduleTime) return
+        if (isPendingSchedule(r, now)) return // ainda não chegou a hora
+        if (alertedRef.current.has(r.id)) return // já alertamos sobre esse
+        // Só considera "recém-chegado" se o horário passou há pouco tempo (evita
+        // disparar alerta antigo para agendamentos de dias atrás ao reabrir o app)
+        const dt = new Date(`${r.schedule}T${r.scheduleTime}:00`)
+        if (isNaN(dt.getTime())) return
+        if (now.getTime() - dt.getTime() > 30 * 60 * 1000) {
+          // Passou de 30min: marca como já visto, sem alertar (evita alerta "velho")
+          alertedRef.current.add(r.id)
+          return
+        }
+        justDue.push(r.id)
+        alertedRef.current.add(r.id)
+      })
+
+      if (justDue.length > 0) {
+        localStorage.setItem(ALERTED_STORAGE_KEY, JSON.stringify(Array.from(alertedRef.current)))
+        setBlinkingIds((prev) => new Set([...prev, ...justDue]))
+        playAlertSound()
+        const rec = records.find((r) => r.id === justDue[0])
+        showToast(
+          `🔔 Chegou a hora do agendamento${rec ? ` de ${rec.clientName || 'cliente'}` : ''}!`,
+          'info',
+        )
+        // Para de piscar depois de um tempo, mas o registro continua na tela principal
+        setTimeout(() => {
+          setBlinkingIds((prev) => {
+            const next = new Set(prev)
+            justDue.forEach((id) => next.delete(id))
+            return next
+          })
+        }, 60000)
+      }
+    }
+
+    checkDue()
+    const interval = setInterval(checkDue, 20000)
+    return () => clearInterval(interval)
+  }, [records, loaded, showToast])
 
   function closeOnboarding() {
     setOnboardingOpen(false)
@@ -148,19 +227,33 @@ export function AutoservicosApp() {
     }
   }, [fontScale, loaded])
 
+  // Agendamentos futuros ficam só na página de Agendamentos — somem da lista
+  // principal até a hora chegar, quando então aparecem aqui automaticamente.
+  const pendingRecords = useMemo(() => records.filter((r) => isPendingSchedule(r)), [records])
+
   const filtered = useMemo(() => {
-    const sorted = [...records].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    )
-    if (!search.trim()) return sorted
-    const q = search.toLowerCase()
-    return sorted.filter(
-      (r) =>
-        r.clientName.toLowerCase().includes(q) ||
-        r.plate.toLowerCase().includes(q) ||
-        r.noteText.toLowerCase().includes(q),
-    )
-  }, [records, search])
+    const sorted = [...records]
+      .filter((r) => !isPendingSchedule(r))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+
+    let result = sorted
+    if (statusFilter !== 'todos') {
+      result = result.filter((r) => (r.status ?? 'em_andamento') === statusFilter)
+    }
+    if (categoryFilter !== 'todas') {
+      result = result.filter((r) => r.category === categoryFilter)
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (r) =>
+          r.clientName.toLowerCase().includes(q) ||
+          r.plate.toLowerCase().includes(q) ||
+          r.noteText.toLowerCase().includes(q),
+      )
+    }
+    return result
+  }, [records, search, statusFilter, categoryFilter])
 
   async function handleSaveRecord(record: ServiceRecord): Promise<boolean> {
     const ok = await upsertRecord(record)
@@ -298,16 +391,17 @@ export function AutoservicosApp() {
   const scheduledCount = records.filter((r) => r.schedule).length
 
   const now = new Date()
-  const monthTotal = records
-    .filter((r) => {
-      const d = new Date(r.createdAt)
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-    })
-    .reduce((sum, r) => sum + parseCurrency(r.price), 0)
-  const monthCount = records.filter((r) => {
+  const monthRecords = records.filter((r) => {
     const d = new Date(r.createdAt)
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
-  }).length
+  })
+  const monthTotal = monthRecords.reduce((sum, r) => sum + parseCurrency(r.price), 0)
+  const monthCount = monthRecords.length
+  const monthByStatus = {
+    em_andamento: monthRecords.filter((r) => (r.status ?? 'em_andamento') === 'em_andamento').length,
+    concluido: monthRecords.filter((r) => r.status === 'concluido').length,
+    aguardando_peca: monthRecords.filter((r) => r.status === 'aguardando_peca').length,
+  }
 
   const todayStr = now.toISOString().slice(0, 10)
   const todaySchedules = records.filter((r) => r.schedule === todayStr)
@@ -323,6 +417,18 @@ export function AutoservicosApp() {
           <h1 className="text-lg font-extrabold leading-tight tracking-tight">Autoserviços</h1>
           <p className="text-[11px] text-white/70">{records.length} registros salvos</p>
         </div>
+        <button
+          onClick={() => setAgendaOpen(true)}
+          aria-label="Agendamentos"
+          className="relative rounded-full p-2 transition hover:bg-white/15"
+        >
+          <CalendarClock className="size-5" />
+          {pendingRecords.length > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-primary">
+              {pendingRecords.length}
+            </span>
+          )}
+        </button>
         <button
           onClick={() => setCalendarOpen((v) => !v)}
           aria-label="Calendário"
@@ -345,7 +451,7 @@ export function AutoservicosApp() {
       </header>
 
       {/* Busca */}
-      <div className="border-b border-border bg-card px-4 py-2.5">
+      <div className="space-y-2 border-b border-border bg-card px-4 py-2.5">
         <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2">
           <Search className="size-4 shrink-0 text-muted-foreground" />
           <input
@@ -355,19 +461,65 @@ export function AutoservicosApp() {
             className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
+
+        {/* Filtros de status e categoria */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button
+            onClick={() => setStatusFilter('todos')}
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              statusFilter === 'todos'
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background text-muted-foreground'
+            }`}
+          >
+            Todos
+          </button>
+          {(Object.keys(STATUS_LABELS) as ServiceStatus[]).map((key) => (
+            <button
+              key={key}
+              onClick={() => setStatusFilter((v) => (v === key ? 'todos' : key))}
+              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                statusFilter === key
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background text-muted-foreground'
+              }`}
+            >
+              {STATUS_LABELS[key]}
+            </button>
+          ))}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as ServiceCategory | 'todas')}
+            className="shrink-0 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground outline-none"
+          >
+            <option value="todas">Toda categoria</option>
+            {CATEGORY_ORDER.map((c) => (
+              <option key={c} value={c}>
+                {CATEGORY_LABELS[c]}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Mini-dashboard financeiro do mês */}
-      <div className="flex divide-x divide-border border-b border-border bg-card px-4 py-2 text-center">
-        <div className="flex-1 px-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Faturado no mês</p>
-          <p className="text-sm font-bold text-success">
-            {monthTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-          </p>
+      <div className="border-b border-border bg-card px-4 py-2">
+        <div className="flex divide-x divide-border text-center">
+          <div className="flex-1 px-2">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Faturado no mês</p>
+            <p className="text-sm font-bold text-success">
+              {monthTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+            </p>
+          </div>
+          <div className="flex-1 px-2">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Serviços no mês</p>
+            <p className="text-sm font-bold text-foreground">{monthCount}</p>
+          </div>
         </div>
-        <div className="flex-1 px-2">
-          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Serviços no mês</p>
-          <p className="text-sm font-bold text-foreground">{monthCount}</p>
+        <div className="mt-1.5 flex items-center justify-center gap-3 text-[11px] font-semibold text-muted-foreground">
+          <span>🟠 {monthByStatus.em_andamento} em andamento</span>
+          <span>🟢 {monthByStatus.concluido} concluídos</span>
+          <span>🔴 {monthByStatus.aguardando_peca} aguard. peça</span>
         </div>
       </div>
 
@@ -418,6 +570,7 @@ export function AutoservicosApp() {
                 onDelete={handleDelete}
                 onShare={setSharing}
                 onZoomPhoto={setZoomPhoto}
+                alerting={blinkingIds.has(record.id)}
               />
             ))}
           </div>
@@ -493,6 +646,32 @@ export function AutoservicosApp() {
         }}
         onShare={(r) => setSharing(r)}
         onZoomPhoto={setZoomPhoto}
+        onShowHistory={(r) => setHistoryFor(r)}
+      />
+      <ClientHistoryModal
+        open={!!historyFor}
+        current={historyFor}
+        records={records}
+        onClose={() => setHistoryFor(null)}
+        onSelect={(r) => {
+          setHistoryFor(null)
+          setViewing(r)
+        }}
+      />
+      <AgendaPage
+        open={agendaOpen}
+        records={pendingRecords}
+        onClose={() => setAgendaOpen(false)}
+        onView={(r) => {
+          setAgendaOpen(false)
+          setViewing(r)
+        }}
+        onEdit={(r) => {
+          setAgendaOpen(false)
+          setEditing(r)
+          setEditorOpen(true)
+        }}
+        onDelete={handleDelete}
       />
       <ScheduleModal dateStr={scheduleDate} onClose={() => setScheduleDate(null)} onSave={handleScheduleSave} />
       <ShareModal record={sharing} onClose={() => setSharing(null)} />
