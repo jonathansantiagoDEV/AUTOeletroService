@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { Camera, CalendarDays, CalendarClock, FileText, Plus, Search, Settings, Bell } from 'lucide-react'
+import { Camera, CalendarDays, CalendarClock, ChevronDown, FileText, LayoutGrid, Plus, Search, Settings, Bell, BarChart3 } from 'lucide-react'
 import type { FontScale, ServiceCategory, ServiceRecord, ServiceStatus } from '@/lib/types'
-import { CATEGORY_LABELS, CATEGORY_ORDER, FONT_SCALE_VALUES, STATUS_LABELS, isPendingSchedule } from '@/lib/types'
+import { CATEGORY_LABELS, FONT_SCALE_VALUES, STATUS_LABELS, isPendingSchedule } from '@/lib/types'
 import { parseCurrency } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import { normalizeImageOrientation } from '@/lib/image'
@@ -29,6 +29,8 @@ import { ClientHistoryModal } from './client-history-modal'
 import { ShareModal } from './share-modal'
 import { PhotoZoom } from './photo-zoom'
 import { SettingsSidebar } from './settings-sidebar'
+import { CategoryFilterModal } from './category-filter-modal'
+import { SalesChartModal } from './sales-chart-modal'
 import { OnboardingModal } from './onboarding-modal'
 import { ConfirmModal } from './confirm-modal'
 import { useToast } from './toast'
@@ -64,6 +66,8 @@ export function AutoservicosApp() {
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false)
+  const [salesChartOpen, setSalesChartOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -430,6 +434,14 @@ export function AutoservicosApp() {
           )}
         </button>
         <button
+          onClick={() => setSalesChartOpen(true)}
+          aria-label="Vendas e faturamento do mês"
+          title="Vendas e faturamento do mês"
+          className="rounded-full p-2 transition hover:bg-white/15"
+        >
+          <BarChart3 className="size-5" />
+        </button>
+        <button
           onClick={() => setCalendarOpen((v) => !v)}
           aria-label="Calendário"
           className={`relative rounded-full p-2 transition ${calendarOpen ? 'bg-white/25' : 'hover:bg-white/15'}`}
@@ -487,18 +499,18 @@ export function AutoservicosApp() {
               {STATUS_LABELS[key]}
             </button>
           ))}
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value as ServiceCategory | 'todas')}
-            className="shrink-0 rounded-full border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground outline-none"
+          <button
+            onClick={() => setCategoryModalOpen(true)}
+            className={`flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+              categoryFilter !== 'todas'
+                ? 'border-primary bg-primary text-primary-foreground'
+                : 'border-border bg-background text-muted-foreground'
+            }`}
           >
-            <option value="todas">Toda categoria</option>
-            {CATEGORY_ORDER.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABELS[c]}
-              </option>
-            ))}
-          </select>
+            <LayoutGrid className="size-3.5" />
+            {categoryFilter === 'todas' ? 'Categoria' : CATEGORY_LABELS[categoryFilter]}
+            <ChevronDown className="size-3.5" />
+          </button>
         </div>
       </div>
 
@@ -673,6 +685,13 @@ export function AutoservicosApp() {
         }}
         onDelete={handleDelete}
       />
+      <CategoryFilterModal
+        open={categoryModalOpen}
+        value={categoryFilter}
+        onClose={() => setCategoryModalOpen(false)}
+        onSelect={setCategoryFilter}
+      />
+      <SalesChartModal open={salesChartOpen} records={records} onClose={() => setSalesChartOpen(false)} />
       <ScheduleModal dateStr={scheduleDate} onClose={() => setScheduleDate(null)} onSave={handleScheduleSave} />
       <ShareModal record={sharing} onClose={() => setSharing(null)} />
       <PhotoZoom photo={zoomPhoto} onClose={() => setZoomPhoto(null)} />

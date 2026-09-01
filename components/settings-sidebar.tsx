@@ -1,7 +1,23 @@
 'use client'
 
-import { useRef } from 'react'
-import { Database, Download, FileBarChart, HelpCircle, LogOut, Moon, Sun, Trash2, Type, Upload, User, X } from 'lucide-react'
+import { useRef, useState } from 'react'
+import {
+  ChevronDown,
+  Database,
+  Download,
+  FileBarChart,
+  HelpCircle,
+  LogOut,
+  Minus,
+  Moon,
+  Plus,
+  Sun,
+  Trash2,
+  Type,
+  Upload,
+  User,
+  X,
+} from 'lucide-react'
 import type { FontScale } from '@/lib/types'
 
 const DEVELOPER_WHATSAPP = '5571993239156'
@@ -23,12 +39,13 @@ interface SettingsSidebarProps {
   onShowTutorial: () => void
 }
 
-const FONT_OPTIONS: { value: FontScale; label: string }[] = [
-  { value: 'normal', label: 'Normal' },
-  { value: 'medium', label: 'Média' },
-  { value: 'large', label: 'Grande' },
-  { value: 'xlarge', label: 'Extra' },
-]
+const FONT_ORDER: FontScale[] = ['normal', 'medium', 'large', 'xlarge']
+const FONT_LABELS: Record<FontScale, string> = {
+  normal: 'Normal',
+  medium: 'Média',
+  large: 'Grande',
+  xlarge: 'Extra grande',
+}
 
 export function SettingsSidebar({
   open,
@@ -47,6 +64,14 @@ export function SettingsSidebar({
   onShowTutorial,
 }: SettingsSidebarProps) {
   const fileRef = useRef<HTMLInputElement>(null)
+  const [dataOpen, setDataOpen] = useState(false)
+
+  const fontIndex = FONT_ORDER.indexOf(fontScale)
+
+  function stepFont(delta: number) {
+    const next = Math.min(FONT_ORDER.length - 1, Math.max(0, fontIndex + delta))
+    onChangeFontScale(FONT_ORDER[next])
+  }
 
   return (
     <>
@@ -86,84 +111,115 @@ export function SettingsSidebar({
             </div>
           </section>
 
-          <section>
-            <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Aparência</h3>
+          {/* Aparência: apenas o ícone (lua = escuro, sol = claro) alterna o modo */}
+          <section className="flex items-center justify-between rounded-lg border border-border bg-background px-3 py-3">
+            <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Aparência</h3>
             <button
               onClick={onToggleDark}
-              className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-3 text-foreground"
+              aria-label={dark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+              title={dark ? 'Modo escuro ativo' : 'Modo claro ativo'}
+              className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary transition hover:bg-primary/20 active:scale-95"
             >
-              <span className="flex items-center gap-2 font-semibold">
-                {dark ? <Moon className="size-4 text-primary" /> : <Sun className="size-4 text-primary" />}
-                Modo escuro
-              </span>
-              <span className={`relative h-6 w-11 rounded-full transition ${dark ? 'bg-primary' : 'bg-border'}`}>
-                <span className={`absolute top-0.5 size-5 rounded-full bg-white transition-all ${dark ? 'left-[22px]' : 'left-0.5'}`} />
-              </span>
+              {dark ? <Moon className="size-5" /> : <Sun className="size-5" />}
             </button>
           </section>
 
+          {/* Tamanho da fonte: barra tradicional, esquerda diminui / direita aumenta */}
           <section>
             <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
               <Type className="size-3.5" /> Tamanho da fonte
             </h3>
-            <div className="grid grid-cols-2 gap-2">
-              {FONT_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  onClick={() => onChangeFontScale(o.value)}
-                  className={`rounded-lg border px-3 py-2.5 text-sm font-semibold transition ${
-                    fontScale === o.value
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-border bg-background text-foreground'
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
+            <div className="rounded-lg border border-border bg-background px-3 py-3">
+              <div className="mb-2 flex items-center justify-between">
+                <span className="text-xs font-semibold text-foreground">{FONT_LABELS[fontScale]}</span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    aria-label="Diminuir fonte"
+                    disabled={fontIndex === 0}
+                    onClick={() => stepFont(-1)}
+                    className="flex size-6 items-center justify-center rounded-full border border-border text-foreground transition disabled:opacity-30"
+                  >
+                    <Minus className="size-3.5" />
+                  </button>
+                  <button
+                    aria-label="Aumentar fonte"
+                    disabled={fontIndex === FONT_ORDER.length - 1}
+                    onClick={() => stepFont(1)}
+                    className="flex size-6 items-center justify-center rounded-full border border-border text-foreground transition disabled:opacity-30"
+                  >
+                    <Plus className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-muted-foreground">A</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={FONT_ORDER.length - 1}
+                  step={1}
+                  value={fontIndex}
+                  onChange={(e) => onChangeFontScale(FONT_ORDER[Number(e.target.value)])}
+                  className="h-1.5 flex-1 accent-primary"
+                  aria-label="Tamanho da fonte"
+                />
+                <span className="text-lg font-bold text-foreground">A</span>
+              </div>
             </div>
           </section>
 
+          {/* Dados: ícone abre uma cascata (accordion) com as opções */}
           <section>
-            <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-              <Database className="size-3.5" /> Dados ({recordCount})
-            </h3>
-            <div className="space-y-2">
-              <button
-                onClick={onExport}
-                className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
-              >
-                <Download className="size-4 text-primary" /> Exportar backup (JSON)
-              </button>
-              <button
-                onClick={onExportReport}
-                className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
-              >
-                <FileBarChart className="size-4 text-primary" /> Exportar relatório (PDF)
-              </button>
-              <button
-                onClick={() => fileRef.current?.click()}
-                className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
-              >
-                <Upload className="size-4 text-primary" /> Importar backup
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) onImport(f)
-                  e.target.value = ''
-                }}
+            <button
+              onClick={() => setDataOpen((v) => !v)}
+              className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-3 py-3"
+            >
+              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
+                <Database className="size-3.5 text-primary" /> Dados ({recordCount})
+              </span>
+              <ChevronDown
+                className={`size-4 text-muted-foreground transition-transform duration-200 ${dataOpen ? 'rotate-180' : ''}`}
               />
-              <button
-                onClick={onClearAll}
-                className="flex w-full items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-3 font-semibold text-danger"
-              >
-                <Trash2 className="size-4" /> Apagar tudo
-              </button>
-            </div>
+            </button>
+            {dataOpen && (
+              <div className="animate-slide-in mt-2 space-y-2">
+                <button
+                  onClick={onExport}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
+                >
+                  <Download className="size-4 text-primary" /> Exportar backup (JSON)
+                </button>
+                <button
+                  onClick={onExportReport}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
+                >
+                  <FileBarChart className="size-4 text-primary" /> Exportar relatório (PDF)
+                </button>
+                <button
+                  onClick={() => fileRef.current?.click()}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
+                >
+                  <Upload className="size-4 text-primary" /> Importar backup
+                </button>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/json,.json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) onImport(f)
+                    e.target.value = ''
+                  }}
+                />
+                <button
+                  onClick={onClearAll}
+                  className="flex w-full items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-3 font-semibold text-danger"
+                >
+                  <Trash2 className="size-4" /> Apagar tudo
+                </button>
+              </div>
+            )}
           </section>
 
           <section>
