@@ -414,7 +414,7 @@ export function AutoservicosApp() {
     <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background shadow-2xl sm:my-4 sm:h-[calc(100dvh-2rem)] sm:rounded-3xl sm:border sm:border-border">
       {/* Cabeçalho */}
       <header className="flex items-center gap-2 bg-primary px-4 py-3 text-primary-foreground">
-        <div className="size-9 shrink-0 overflow-hidden rounded-lg bg-white">
+        <div className="size-9 shrink-0 overflow-hidden rounded-lg">
           <Logo className="size-full" />
         </div>
         <div className="flex-1">

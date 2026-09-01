@@ -52,7 +52,7 @@ const SITE_URL = 'https://aut-oeletro-service-vvir.vercel.app'
     <div className="flex min-h-[100dvh] w-full items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl">
         <div className="mb-6 flex flex-col items-center gap-2">
-          <div className="size-14 overflow-hidden rounded-2xl bg-white shadow">
+          <div className="size-14 overflow-hidden rounded-2xl shadow">
             <Logo className="size-full" />
           </div>
           <h1 className="text-xl font-extrabold tracking-tight text-foreground">Autoserviços</h1>
