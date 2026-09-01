@@ -553,7 +553,17 @@ export function AutoservicosApp() {
           />
         )}
 
-        {filtered.length === 0 ? (
+        {!loaded ? (
+          <div className="space-y-2.5 pb-24">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="animate-pulse rounded-app border border-border bg-card p-4">
+                <div className="mb-2 h-4 w-1/3 rounded bg-background" />
+                <div className="mb-1.5 h-3 w-1/2 rounded bg-background" />
+                <div className="h-3 w-1/4 rounded bg-background" />
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
             <div className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
               <FileText className="size-8" />
@@ -641,6 +651,7 @@ export function AutoservicosApp() {
         open={editorOpen}
         editing={editing}
         initialPhotos={initialPhotos}
+        userId={user?.id ?? null}
         onClose={() => {
           setEditorOpen(false)
           setEditing(null)

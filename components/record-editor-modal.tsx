@@ -6,6 +6,7 @@ import type { ServiceCategory, ServiceRecord, ServiceStatus, TextStyle } from '@
 import { CATEGORY_LABELS, CATEGORY_ORDER, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
 import { normalizeImageOrientation } from '@/lib/image'
+import { uploadPhoto, deletePhoto } from '@/lib/supabase/storage'
 import { SignaturePad } from './signature-pad'
 import { useToast } from './toast'
 
@@ -23,11 +24,12 @@ interface RecordEditorModalProps {
   open: boolean
   editing: ServiceRecord | null
   initialPhotos?: string[]
+  userId: string | null
   onClose: () => void
   onSave: (record: ServiceRecord) => Promise<boolean> | void
 }
 
-export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSave }: RecordEditorModalProps) {
+export function RecordEditorModal({ open, editing, initialPhotos, userId, onClose, onSave }: RecordEditorModalProps) {
   const showToast = useToast()
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
@@ -35,10 +37,12 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
   const [price, setPrice] = useState('')
   const [noteText, setNoteText] = useState('')
   const [photos, setPhotos] = useState<string[]>([])
+  const [uploadingCount, setUploadingCount] = useState(0)
   const [style, setStyle] = useState<TextStyle>(DEFAULT_TEXT_STYLE)
   const [status, setStatus] = useState<ServiceStatus>('em_andamento')
   const [category, setCategory] = useState<ServiceCategory | null>(null)
   const [signature, setSignature] = useState<string | null>(null)
+  const [warrantyUntil, setWarrantyUntil] = useState<string | null>(null)
   const [signatureOpen, setSignatureOpen] = useState(false)
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
@@ -59,32 +63,63 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       setStatus(editing.status ?? 'em_andamento')
       setCategory(editing.category ?? null)
       setSignature(editing.signature ?? null)
+      setWarrantyUntil(editing.warrantyUntil ?? null)
     } else {
       setClientName('')
       setClientPhone('')
       setPlate('')
       setPrice('')
       setNoteText('')
-      setPhotos(initialPhotos && initialPhotos.length > 0 ? initialPhotos : [])
+      setPhotos([])
       setStyle(DEFAULT_TEXT_STYLE)
       setStatus('em_andamento')
       setCategory(null)
       setSignature(null)
+      setWarrantyUntil(null)
+      // Fotos vindas do botão de câmera rápida (fora do editor) ainda estão em base64 —
+      // envia para o Storage aqui, do mesmo jeito que as fotos escolhidas dentro do editor.
+      if (initialPhotos && initialPhotos.length > 0 && userId) {
+        setUploadingCount((n) => n + initialPhotos.length)
+        initialPhotos.forEach((dataUrl) => {
+          uploadPhoto(dataUrl, userId)
+            .then((url) => {
+              if (url) {
+                setPhotos((prev) => [...prev, url])
+              } else {
+                showToast('❌ Falha ao enviar uma foto', 'error')
+              }
+            })
+            .finally(() => setUploadingCount((n) => Math.max(0, n - 1)))
+        })
+      }
     }
     setShowFonts(false)
     setShowColors(false)
     setSaving(false)
-  }, [open, editing, initialPhotos])
+  }, [open, editing, initialPhotos, userId, showToast])
 
   function handleFiles(files: FileList | null) {
     if (!files) return
+    if (!userId) {
+      showToast('❌ Não foi possível identificar o usuário para enviar a foto', 'error')
+      return
+    }
     Array.from(files).forEach((file) => {
       if (!file.type.startsWith('image/')) return
+      setUploadingCount((n) => n + 1)
       normalizeImageOrientation(file)
-        .then((dataUrl) => setPhotos((prev) => [...prev, dataUrl]))
-        .catch(() => {
-          // Se a normalização falhar, ignora esta foto silenciosamente
+        .then((dataUrl) => uploadPhoto(dataUrl, userId))
+        .then((url) => {
+          if (url) {
+            setPhotos((prev) => [...prev, url])
+          } else {
+            showToast('❌ Falha ao enviar uma foto', 'error')
+          }
         })
+        .catch(() => {
+          showToast('❌ Falha ao processar uma foto', 'error')
+        })
+        .finally(() => setUploadingCount((n) => Math.max(0, n - 1)))
     })
   }
 
@@ -123,6 +158,10 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
 
   async function handleSave() {
     if (saving) return
+    if (uploadingCount > 0) {
+      showToast('⏳ Aguarde o envio das fotos terminar', 'error')
+      return
+    }
     if (!clientName.trim() && !noteText.trim() && photos.length === 0) {
       showToast('❌ Preencha ao menos o nome ou a descrição', 'error')
       return
@@ -146,6 +185,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       status,
       category,
       signature,
+      warrantyUntil,
       createdAt: editing?.createdAt ?? new Date().toISOString(),
     }
     const result = await onSave(record)
@@ -248,6 +288,27 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
                 {CATEGORY_LABELS[key]}
               </button>
             ))}
+          </div>
+
+          {/* Garantia do serviço */}
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5">
+            <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">Garantia até</span>
+            <input
+              type="date"
+              value={warrantyUntil ?? ''}
+              onChange={(e) => setWarrantyUntil(e.target.value || null)}
+              className="flex-1 bg-transparent text-base text-foreground outline-none"
+            />
+            {warrantyUntil && (
+              <button
+                type="button"
+                onClick={() => setWarrantyUntil(null)}
+                className="rounded-full p-1 text-muted-foreground hover:text-danger"
+                aria-label="Remover garantia"
+              >
+                <X className="size-4" />
+              </button>
+            )}
           </div>
 
           {/* Barra de estilo */}
@@ -361,7 +422,10 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
               <div key={i} className="relative">
                 <img src={p || '/placeholder.svg'} alt={`Foto ${i + 1}`} className="size-16 rounded-lg border border-border object-cover" />
                 <button
-                  onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                  onClick={() => {
+                    setPhotos((prev) => prev.filter((_, idx) => idx !== i))
+                    deletePhoto(p)
+                  }}
                   className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-danger text-white"
                   aria-label="Remover foto"
                 >
@@ -369,6 +433,15 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
                 </button>
               </div>
             ))}
+            {uploadingCount > 0 &&
+              Array.from({ length: uploadingCount }).map((_, i) => (
+                <div
+                  key={`uploading-${i}`}
+                  className="flex size-16 items-center justify-center rounded-lg border border-dashed border-border bg-background"
+                >
+                  <div className="size-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                </div>
+              ))}
             <button
               onClick={() => cameraRef.current?.click()}
               className="flex size-16 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
@@ -451,10 +524,10 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
           </button>
           <button
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || uploadingCount > 0}
             className="flex-[2] rounded-lg bg-primary py-3 font-bold text-primary-foreground hover:bg-primary-dark disabled:opacity-60"
           >
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? 'Salvando...' : uploadingCount > 0 ? 'Enviando fotos...' : 'Salvar'}
           </button>
         </div>
       </div>
