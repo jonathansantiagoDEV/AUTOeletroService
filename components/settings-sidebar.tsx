@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
-import { Database, Download, LogOut, Moon, Sun, Trash2, Type, Upload, User, X } from 'lucide-react'
+import { Database, Download, FileBarChart, HelpCircle, LogOut, Moon, Sun, Trash2, Type, Upload, User, X } from 'lucide-react'
 import type { FontScale } from '@/lib/types'
 
 const DEVELOPER_WHATSAPP = '5571993239156'
@@ -15,10 +15,12 @@ interface SettingsSidebarProps {
   onChangeFontScale: (scale: FontScale) => void
   recordCount: number
   onExport: () => void
+  onExportReport: () => void
   onImport: (file: File) => void
   onClearAll: () => void
   userEmail: string | null
   onLogout: () => void
+  onShowTutorial: () => void
 }
 
 const FONT_OPTIONS: { value: FontScale; label: string }[] = [
@@ -37,10 +39,12 @@ export function SettingsSidebar({
   onChangeFontScale,
   recordCount,
   onExport,
+  onExportReport,
   onImport,
   onClearAll,
   userEmail,
   onLogout,
+  onShowTutorial,
 }: SettingsSidebarProps) {
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -131,6 +135,12 @@ export function SettingsSidebar({
                 <Download className="size-4 text-primary" /> Exportar backup (JSON)
               </button>
               <button
+                onClick={onExportReport}
+                className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
+              >
+                <FileBarChart className="size-4 text-primary" /> Exportar relatório (PDF)
+              </button>
+              <button
                 onClick={() => fileRef.current?.click()}
                 className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
               >
@@ -154,6 +164,15 @@ export function SettingsSidebar({
                 <Trash2 className="size-4" /> Apagar tudo
               </button>
             </div>
+          </section>
+
+          <section>
+            <button
+              onClick={onShowTutorial}
+              className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground"
+            >
+              <HelpCircle className="size-4 text-primary" /> Ver tutorial novamente
+            </button>
           </section>
 
           <p className="flex items-center justify-center gap-1.5 pt-2 text-center text-xs text-muted-foreground">

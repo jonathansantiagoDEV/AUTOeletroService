@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf'
 import type { ServiceRecord } from './types'
+import { STATUS_LABELS } from './types'
 
 // Cores baseadas no modelo (azul e laranja)
 const PRIMARY: [number, number, number] = [0, 82, 155] // Azul #00529B
@@ -284,4 +285,112 @@ export function pdfFileName(record: ServiceRecord): string {
   const name = (record.clientName || 'registro').replace(/\s/g, '_')
   const date = new Date(record.createdAt).toISOString().slice(0, 10)
   return `ordem_servico_${name}_${date}.pdf`
+}
+
+// Relatório resumido com todos os registros (útil para fechamento de mês)
+export function generateBulkReportBlob(records: ServiceRecord[]): Blob {
+  const doc = new jsPDF('p', 'mm', 'a4')
+  const pageWidth = 210
+  const margin = 14
+  const contentWidth = pageWidth - margin * 2
+  let y = 20
+
+  doc.setFillColor(...PRIMARY)
+  doc.rect(0, 0, pageWidth, 5, 'F')
+
+  doc.setTextColor(...PRIMARY)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('RELATÓRIO DE SERVIÇOS', margin, y)
+  y += 6
+  doc.setTextColor(...TEXT_MUTED)
+  doc.setFontSize(9.5)
+  doc.setFont('helvetica', 'normal')
+  const now = new Date()
+  doc.text(`Gerado em ${now.toLocaleDateString('pt-BR')} • ${records.length} registro(s)`, margin, y)
+  y += 8
+
+  const total = records.reduce((sum, r) => {
+    const cleaned = (r.price || '').replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')
+    const n = parseFloat(cleaned)
+    return sum + (isNaN(n) ? 0 : n)
+  }, 0)
+
+  doc.setFillColor(...ACCENT)
+  doc.rect(margin, y, contentWidth, 10, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'bold')
+  doc.text(
+    `TOTAL: ${total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`,
+    margin + contentWidth / 2,
+    y + 7,
+    { align: 'center' },
+  )
+  y += 16
+
+  // Cabeçalho da tabela
+  const colDate = contentWidth * 0.14
+  const colClient = contentWidth * 0.3
+  const colPlate = contentWidth * 0.18
+  const colStatus = contentWidth * 0.22
+  const colPrice = contentWidth * 0.16
+
+  function drawHeader() {
+    doc.setFillColor(...PRIMARY)
+    doc.rect(margin, y, contentWidth, 8, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(8.5)
+    doc.setFont('helvetica', 'bold')
+    let x = margin + 2
+    doc.text('DATA', x, y + 5.5)
+    x += colDate
+    doc.text('CLIENTE', x, y + 5.5)
+    x += colClient
+    doc.text('PLACA', x, y + 5.5)
+    x += colPlate
+    doc.text('STATUS', x, y + 5.5)
+    x += colStatus
+    doc.text('VALOR', x, y + 5.5)
+    y += 8
+  }
+
+  drawHeader()
+
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8.5)
+  records.forEach((r, i) => {
+    if (y > 280) {
+      doc.addPage()
+      y = 20
+      drawHeader()
+    }
+    if (i % 2 === 0) {
+      doc.setFillColor(...ROW_ALT)
+      doc.rect(margin, y, contentWidth, 7, 'F')
+    }
+    doc.setTextColor(...TEXT_DARK)
+    let x = margin + 2
+    const dateStr = new Date(r.createdAt).toLocaleDateString('pt-BR')
+    doc.text(dateStr, x, y + 5)
+    x += colDate
+    doc.text((r.clientName || '---').slice(0, 22), x, y + 5)
+    x += colClient
+    doc.text(r.plate || '---', x, y + 5)
+    x += colPlate
+    doc.text(STATUS_LABELS[r.status ?? 'em_andamento'], x, y + 5)
+    x += colStatus
+    doc.text(r.price ? `R$ ${r.price}` : '---', x, y + 5)
+    y += 7
+  })
+
+  y += 6
+  doc.setDrawColor(...LINE)
+  doc.line(margin, y, pageWidth - margin, y)
+  y += 5
+  doc.setFontSize(8)
+  doc.setTextColor(...TEXT_MUTED)
+  doc.text('Documento gerado pelo Autoserviços', pageWidth / 2, y, { align: 'center' })
+
+  return doc.output('blob')
 }

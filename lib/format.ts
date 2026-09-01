@@ -48,3 +48,11 @@ export function toDateStr(year: number, month: number, day: number): string {
     String(day).padStart(2, '0')
   )
 }
+
+// Converte "R$ 1.234,56" ou "1.234,56" para número (1234.56)
+export function parseCurrency(value: string): number {
+  if (!value) return 0
+  const cleaned = value.replace(/[^\d,.-]/g, '').replace(/\./g, '').replace(',', '.')
+  const num = parseFloat(cleaned)
+  return isNaN(num) ? 0 : num
+}

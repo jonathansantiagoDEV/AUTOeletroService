@@ -7,9 +7,24 @@ export interface TextStyle {
   fontSize: number
 }
 
+export type ServiceStatus = 'em_andamento' | 'concluido' | 'aguardando_peca'
+
+export const STATUS_LABELS: Record<ServiceStatus, string> = {
+  em_andamento: 'Em andamento',
+  concluido: 'Concluído',
+  aguardando_peca: 'Aguardando peça',
+}
+
+export const STATUS_COLORS: Record<ServiceStatus, string> = {
+  em_andamento: '#F57C00',
+  concluido: '#2E7D32',
+  aguardando_peca: '#C2185B',
+}
+
 export interface ServiceRecord {
   id: string
   clientName: string
+  clientPhone: string
   noteText: string
   plate: string
   price: string
@@ -17,6 +32,7 @@ export interface ServiceRecord {
   textStyle: TextStyle
   schedule: string | null
   scheduleTime: string | null
+  status: ServiceStatus
   createdAt: string
 }
 

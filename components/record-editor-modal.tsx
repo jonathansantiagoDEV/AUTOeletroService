@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Bold, Camera, Italic, Palette, Type, Underline, X } from 'lucide-react'
-import type { ServiceRecord, TextStyle } from '@/lib/types'
-import { DEFAULT_TEXT_STYLE } from '@/lib/types'
+import type { ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
+import { DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
 import { normalizeImageOrientation } from '@/lib/image'
 import { useToast } from './toast'
@@ -29,11 +29,13 @@ interface RecordEditorModalProps {
 export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSave }: RecordEditorModalProps) {
   const showToast = useToast()
   const [clientName, setClientName] = useState('')
+  const [clientPhone, setClientPhone] = useState('')
   const [plate, setPlate] = useState('')
   const [price, setPrice] = useState('')
   const [noteText, setNoteText] = useState('')
   const [photos, setPhotos] = useState<string[]>([])
   const [style, setStyle] = useState<TextStyle>(DEFAULT_TEXT_STYLE)
+  const [status, setStatus] = useState<ServiceStatus>('em_andamento')
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -43,18 +45,22 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
     if (!open) return
     if (editing) {
       setClientName(editing.clientName)
+      setClientPhone(editing.clientPhone ?? '')
       setPlate(editing.plate)
       setPrice(editing.price)
       setNoteText(editing.noteText)
       setPhotos(editing.photos)
       setStyle(editing.textStyle ?? DEFAULT_TEXT_STYLE)
+      setStatus(editing.status ?? 'em_andamento')
     } else {
       setClientName('')
+      setClientPhone('')
       setPlate('')
       setPrice('')
       setNoteText('')
       setPhotos(initialPhotos && initialPhotos.length > 0 ? initialPhotos : [])
       setStyle(DEFAULT_TEXT_STYLE)
+      setStatus('em_andamento')
     }
     setShowFonts(false)
     setShowColors(false)
@@ -97,6 +103,15 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
     setPlate(cleaned)
   }
 
+  function handlePhoneChange(raw: string) {
+    // Formata como (XX) XXXXX-XXXX enquanto digita
+    const digits = raw.replace(/\D/g, '').slice(0, 11)
+    let formatted = digits
+    if (digits.length > 2) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    if (digits.length > 7) formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+    setClientPhone(formatted)
+  }
+
   async function handleSave() {
     if (saving) return
     if (!clientName.trim() && !noteText.trim() && photos.length === 0) {
@@ -111,6 +126,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
     const record: ServiceRecord = {
       id: editing?.id ?? genId(),
       clientName: clientName.trim(),
+      clientPhone: clientPhone.trim(),
       plate: plate.trim().toUpperCase(),
       price: price.trim(),
       noteText: noteText.trim(),
@@ -118,6 +134,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
       textStyle: style,
       schedule: editing?.schedule ?? null,
       scheduleTime: editing?.scheduleTime ?? null,
+      status,
       createdAt: editing?.createdAt ?? new Date().toISOString(),
     }
     const result = await onSave(record)
@@ -157,6 +174,14 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
               className="col-span-1 rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary sm:col-span-2"
             />
             <input
+              value={clientPhone}
+              onChange={(e) => handlePhoneChange(e.target.value)}
+              inputMode="numeric"
+              placeholder="Telefone (opcional)"
+              maxLength={16}
+              className="col-span-1 rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary sm:col-span-2"
+            />
+            <input
               value={plate}
               onChange={(e) => handlePlateChange(e.target.value)}
               placeholder="Placa (ABC1234 ou ABC1D23)"
@@ -170,6 +195,25 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
               placeholder="Preço (R$)"
               className="rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary"
             />
+          </div>
+
+          {/* Status do serviço */}
+          <div className="flex gap-1.5">
+            {(Object.keys(STATUS_LABELS) as ServiceStatus[]).map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setStatus(key)}
+                className="flex-1 rounded-full border py-1.5 text-xs font-semibold transition"
+                style={
+                  status === key
+                    ? { backgroundColor: STATUS_COLORS[key], borderColor: STATUS_COLORS[key], color: '#fff' }
+                    : { borderColor: 'var(--border)', color: 'var(--muted-foreground)' }
+                }
+              >
+                {STATUS_LABELS[key]}
+              </button>
+            ))}
           </div>
 
           {/* Barra de estilo */}

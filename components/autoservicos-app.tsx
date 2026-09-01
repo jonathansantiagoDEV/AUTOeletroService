@@ -3,11 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { Camera, CalendarDays, FileText, Plus, Search, Settings } from 'lucide-react'
+import { Camera, CalendarDays, FileText, Plus, Search, Settings, Bell } from 'lucide-react'
 import type { FontScale, ServiceRecord } from '@/lib/types'
 import { FONT_SCALE_VALUES } from '@/lib/types'
+import { parseCurrency } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import { normalizeImageOrientation } from '@/lib/image'
+import { generateBulkReportBlob } from '@/lib/pdf'
 import {
   loadRecords,
   upsertRecord,
@@ -24,6 +26,7 @@ import { ViewRecordModal } from './view-record-modal'
 import { ShareModal } from './share-modal'
 import { PhotoZoom } from './photo-zoom'
 import { SettingsSidebar } from './settings-sidebar'
+import { OnboardingModal } from './onboarding-modal'
 import { ConfirmModal } from './confirm-modal'
 import { useToast } from './toast'
 
@@ -48,6 +51,21 @@ export function AutoservicosApp() {
   const [scheduleDate, setScheduleDate] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [onboardingOpen, setOnboardingOpen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (!localStorage.getItem('autoservicos_onboarding_seen')) {
+      setOnboardingOpen(true)
+    }
+  }, [])
+
+  function closeOnboarding() {
+    setOnboardingOpen(false)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('autoservicos_onboarding_seen', '1')
+    }
+  }
   const [deleteTarget, setDeleteTarget] = useState<ServiceRecord | null>(null)
   const [clearAllOpen, setClearAllOpen] = useState(false)
 
@@ -219,6 +237,23 @@ export function AutoservicosApp() {
     showToast('✅ Backup exportado!', 'success')
   }
 
+  function handleExportReport() {
+    if (records.length === 0) {
+      showToast('⚠️ Nenhum registro para exportar', 'error')
+      return
+    }
+    const blob = generateBulkReportBlob(records)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `relatorio_servicos_${new Date().toISOString().slice(0, 10)}.pdf`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    showToast('✅ Relatório em PDF exportado!', 'success')
+  }
+
   function handleImport(file: File) {
     const reader = new FileReader()
     reader.onload = async (e) => {
@@ -261,6 +296,21 @@ export function AutoservicosApp() {
   }
 
   const scheduledCount = records.filter((r) => r.schedule).length
+
+  const now = new Date()
+  const monthTotal = records
+    .filter((r) => {
+      const d = new Date(r.createdAt)
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+    })
+    .reduce((sum, r) => sum + parseCurrency(r.price), 0)
+  const monthCount = records.filter((r) => {
+    const d = new Date(r.createdAt)
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
+  }).length
+
+  const todayStr = now.toISOString().slice(0, 10)
+  const todaySchedules = records.filter((r) => r.schedule === todayStr)
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background shadow-2xl sm:my-4 sm:h-[calc(100dvh-2rem)] sm:rounded-3xl sm:border sm:border-border">
@@ -306,6 +356,28 @@ export function AutoservicosApp() {
           />
         </div>
       </div>
+
+      {/* Mini-dashboard financeiro do mês */}
+      <div className="flex divide-x divide-border border-b border-border bg-card px-4 py-2 text-center">
+        <div className="flex-1 px-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Faturado no mês</p>
+          <p className="text-sm font-bold text-success">
+            {monthTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+          </p>
+        </div>
+        <div className="flex-1 px-2">
+          <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Serviços no mês</p>
+          <p className="text-sm font-bold text-foreground">{monthCount}</p>
+        </div>
+      </div>
+
+      {/* Aviso de agendamentos de hoje */}
+      {todaySchedules.length > 0 && (
+        <div className="flex items-center gap-2 bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
+          <Bell className="size-3.5 shrink-0" />
+          Você tem {todaySchedules.length} agendamento{todaySchedules.length > 1 ? 's' : ''} para hoje.
+        </div>
+      )}
 
       {/* Conteúdo */}
       <main className="thin-scroll flex-1 overflow-y-auto px-4 py-3">
@@ -434,11 +506,14 @@ export function AutoservicosApp() {
         onChangeFontScale={setFontScale}
         recordCount={records.length}
         onExport={handleExport}
+        onExportReport={handleExportReport}
         onImport={handleImport}
         onClearAll={handleClearAll}
         userEmail={user?.email ?? null}
         onLogout={handleLogout}
+        onShowTutorial={() => setOnboardingOpen(true)}
       />
+      <OnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
       <ConfirmModal
         open={!!deleteTarget}
         title="Excluir Registro"

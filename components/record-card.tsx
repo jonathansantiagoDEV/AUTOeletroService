@@ -1,7 +1,8 @@
 'use client'
 
-import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, Pencil, Share2, Trash2, UserCircle } from 'lucide-react'
+import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, Pencil, Phone, Share2, Trash2, UserCircle } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
+import { STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { timeAgo } from '@/lib/format'
 
 interface RecordCardProps {
@@ -35,11 +36,39 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
       }`}
     >
       <div className="mb-1.5 flex items-start justify-between gap-3">
-        <div className="flex-1 break-words text-base font-bold text-foreground">
-          <UserCircle className="mr-1.5 inline size-4 text-primary" />
+        <div className="flex flex-1 flex-wrap items-center gap-1.5 break-words text-base font-bold text-foreground">
+          <UserCircle className="inline size-4 text-primary" />
           {record.clientName || 'Cliente'}
+          <span
+            className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+            style={{ backgroundColor: STATUS_COLORS[record.status ?? 'em_andamento'] }}
+          >
+            {STATUS_LABELS[record.status ?? 'em_andamento']}
+          </span>
         </div>
         <div className="flex shrink-0 gap-2">
+          {record.clientPhone && (
+            <>
+              <a
+                href={`tel:${record.clientPhone.replace(/\D/g, '')}`}
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Ligar para o cliente"
+                className="flex items-center justify-center rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-primary"
+              >
+                <Phone className="size-5" />
+              </a>
+              <a
+                href={`https://wa.me/55${record.clientPhone.replace(/\D/g, '')}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Chamar no WhatsApp"
+                className="flex items-center justify-center rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-[#25D366]"
+              >
+                <MessageCircle className="size-5" />
+              </a>
+            </>
+          )}
           <button
             aria-label="Editar"
             onClick={(e) => {

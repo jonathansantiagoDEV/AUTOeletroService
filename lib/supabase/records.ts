@@ -1,4 +1,4 @@
-import type { ServiceRecord, TextStyle } from '@/lib/types'
+import type { ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
 import { DEFAULT_TEXT_STYLE } from '@/lib/types'
 import { createClient } from './client'
 
@@ -9,6 +9,7 @@ interface ServiceRecordRow {
   id: string
   user_id: string
   client_name: string
+  client_phone: string | null
   note_text: string
   plate: string
   price: string
@@ -16,6 +17,7 @@ interface ServiceRecordRow {
   text_style: TextStyle
   schedule: string | null
   schedule_time: string | null
+  status: string | null
   created_at: string
 }
 
@@ -23,6 +25,7 @@ function rowToRecord(row: ServiceRecordRow): ServiceRecord {
   return {
     id: row.id,
     clientName: row.client_name,
+    clientPhone: row.client_phone ?? '',
     noteText: row.note_text,
     plate: row.plate,
     price: row.price,
@@ -30,6 +33,7 @@ function rowToRecord(row: ServiceRecordRow): ServiceRecord {
     textStyle: row.text_style ?? DEFAULT_TEXT_STYLE,
     schedule: row.schedule,
     scheduleTime: row.schedule_time,
+    status: (row.status as ServiceStatus) ?? 'em_andamento',
     createdAt: row.created_at,
   }
 }
@@ -39,6 +43,7 @@ function recordToRow(record: ServiceRecord, userId: string) {
     id: record.id,
     user_id: userId,
     client_name: record.clientName,
+    client_phone: record.clientPhone || null,
     note_text: record.noteText,
     plate: record.plate,
     price: record.price,
@@ -46,6 +51,7 @@ function recordToRow(record: ServiceRecord, userId: string) {
     text_style: record.textStyle,
     schedule: record.schedule,
     schedule_time: record.scheduleTime,
+    status: record.status,
     created_at: record.createdAt,
   }
 }
