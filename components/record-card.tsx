@@ -2,7 +2,7 @@
 
 import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, Pencil, Phone, Share2, Trash2, UserCircle } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
-import { STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
+import { DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { timeAgo } from '@/lib/format'
 
 interface RecordCardProps {
@@ -19,9 +19,12 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
   const shownPhotos = record.photos.slice(0, maxShow)
   const extra = record.photos.length - maxShow
 
+  // Cor padrão (não escolhida manualmente pelo usuário) segue o tema
+  // claro/escuro em vez de ficar travada em cinza-escuro (#1A1A1A).
+  const usingDefaultColor = record.textStyle.color === DEFAULT_TEXT_STYLE.color
   const styledText: React.CSSProperties = {
     fontFamily: `'${record.textStyle.fontFamily}', sans-serif`,
-    color: record.textStyle.color,
+    color: usingDefaultColor ? undefined : record.textStyle.color,
     fontSize: `${record.textStyle.fontSize}px`,
     fontWeight: record.textStyle.isBold ? 700 : 400,
     fontStyle: record.textStyle.isItalic ? 'italic' : 'normal',
@@ -119,7 +122,9 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
 
       {record.noteText && (
         <div className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background px-2.5 py-1.5">
-          <span style={styledText}>{record.noteText}</span>
+          <span style={styledText} className={usingDefaultColor ? 'text-foreground' : ''}>
+            {record.noteText}
+          </span>
         </div>
       )}
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bold, Camera, Italic, Palette, Type, Underline, X } from 'lucide-react'
+import { Bold, Camera, Image as GalleryIcon, Italic, Palette, Type, Underline, X } from 'lucide-react'
 import type { ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
 import { DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
@@ -40,6 +40,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
   const [showColors, setShowColors] = useState(false)
   const [saving, setSaving] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const cameraRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!open) return
@@ -146,9 +147,14 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
 
   if (!open) return null
 
+  // Se o usuário não escolheu uma cor customizada (ainda está na cor padrão),
+  // deixamos a cor seguir o tema (claro/escuro) via classe CSS, em vez de
+  // travar em #1A1A1A — que fica ilegível sobre fundo escuro. Se o usuário
+  // escolher uma cor no seletor de cores, essa escolha é sempre respeitada.
+  const usingDefaultColor = style.color === DEFAULT_TEXT_STYLE.color
   const editorStyle: React.CSSProperties = {
     fontFamily: `'${style.fontFamily}', sans-serif`,
-    color: style.color,
+    color: usingDefaultColor ? undefined : style.color,
     fontSize: `${style.fontSize}px`,
     fontWeight: style.isBold ? 700 : 400,
     fontStyle: style.isItalic ? 'italic' : 'normal',
@@ -316,7 +322,9 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
             placeholder="Descrição do serviço..."
             rows={4}
             style={editorStyle}
-            className="w-full resize-y rounded-lg border border-border bg-background px-3 py-2.5 outline-none focus:border-primary"
+            className={`w-full resize-y rounded-lg border border-border bg-background px-3 py-2.5 outline-none focus:border-primary ${
+              usingDefaultColor ? 'text-foreground' : ''
+            }`}
           />
 
           {/* Fotos */}
@@ -334,13 +342,42 @@ export function RecordEditorModal({ open, editing, initialPhotos, onClose, onSav
               </div>
             ))}
             <button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => cameraRef.current?.click()}
               className="flex size-16 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
             >
               <Camera className="size-5" />
-              <span className="text-[10px]">Foto</span>
+              <span className="text-[10px]">Câmera</span>
             </button>
-            <input ref={fileRef} type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleFiles(e.target.files)} />
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="flex size-16 flex-col items-center justify-center gap-0.5 rounded-lg border-2 border-dashed border-primary/50 text-primary hover:bg-primary/5"
+            >
+              <GalleryIcon className="size-5" />
+              <span className="text-[10px]">Galeria</span>
+            </button>
+            {/* capture="environment" abre a câmera do dispositivo diretamente (em vez da galeria) */}
+            <input
+              ref={cameraRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => {
+                handleFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                handleFiles(e.target.files)
+                e.target.value = ''
+              }}
+            />
           </div>
         </div>
 

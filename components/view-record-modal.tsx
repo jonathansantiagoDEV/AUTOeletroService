@@ -2,6 +2,7 @@
 
 import { Bell, Calendar, DollarSign, Hash, Pencil, Share2, X } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
+import { DEFAULT_TEXT_STYLE } from '@/lib/types'
 import { fullDateTime } from '@/lib/format'
 
 interface ViewRecordModalProps {
@@ -15,9 +16,12 @@ interface ViewRecordModalProps {
 export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto }: ViewRecordModalProps) {
   if (!record) return null
 
+  // Cor padrão (não escolhida manualmente pelo usuário) segue o tema
+  // claro/escuro em vez de ficar travada em cinza-escuro (#1A1A1A).
+  const usingDefaultColor = record.textStyle.color === DEFAULT_TEXT_STYLE.color
   const styledText: React.CSSProperties = {
     fontFamily: `'${record.textStyle.fontFamily}', sans-serif`,
-    color: record.textStyle.color,
+    color: usingDefaultColor ? undefined : record.textStyle.color,
     fontSize: `${record.textStyle.fontSize}px`,
     fontWeight: record.textStyle.isBold ? 700 : 400,
     fontStyle: record.textStyle.isItalic ? 'italic' : 'normal',
@@ -56,7 +60,9 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto 
 
           {record.noteText && (
             <div className="whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background p-3">
-              <span style={styledText}>{record.noteText}</span>
+              <span style={styledText} className={usingDefaultColor ? 'text-foreground' : ''}>
+                {record.noteText}
+              </span>
             </div>
           )}
 
