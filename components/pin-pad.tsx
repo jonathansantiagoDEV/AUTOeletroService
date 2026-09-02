@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Backspace, LockKeyhole, ShieldCheck, X } from 'lucide-react'
+import { Delete, LockKeyhole, ShieldCheck, X } from 'lucide-react'
 
 interface PinPadProps {
   open: boolean
@@ -85,7 +85,7 @@ export function PinPad({ open, mode, title, subtitle, error, onSubmit, onCancel 
           ))}
           <div />
           <button onClick={() => press('0')} className="aspect-square rounded-2xl border border-border bg-card text-2xl font-bold text-foreground shadow-sm transition active:scale-95 active:bg-primary/10">0</button>
-          <button onClick={() => setPin((p) => p.slice(0, -1))} aria-label="Apagar número" className="aspect-square rounded-2xl text-muted-foreground transition active:bg-primary/10"><Backspace className="mx-auto size-6" /></button>
+          <button onClick={() => setPin((p) => p.slice(0, -1))} aria-label="Apagar número" className="aspect-square rounded-2xl text-muted-foreground transition active:bg-primary/10"><Delete className="mx-auto size-6" /></button>
         </div>
       </div>
     </div>
