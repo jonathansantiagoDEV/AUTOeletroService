@@ -17,6 +17,7 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
   const showToast = useToast()
   const [client, setClient] = useState('')
   const [plate, setPlate] = useState('')
+  const [date, setDate] = useState('')
   const [time, setTime] = useState('12:00')
   const [note, setNote] = useState('')
 
@@ -24,6 +25,7 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
     if (dateStr) {
       setClient('')
       setPlate('')
+      setDate(dateStr)
       setTime('12:00')
       setNote('')
     }
@@ -31,15 +33,13 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
 
   if (!dateStr) return null
 
-  const dateLabel = new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  })
-
   function handleSave() {
     if (!client.trim()) {
       showToast('❌ Informe o nome do cliente', 'error')
+      return
+    }
+    if (!date) {
+      showToast('❌ Informe a data do agendamento', 'error')
       return
     }
     const record: ServiceRecord = {
@@ -51,7 +51,7 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
       noteText: note.trim() || 'Agendamento via calendário',
       photos: [],
       textStyle: { ...DEFAULT_TEXT_STYLE },
-      schedule: dateStr,
+      schedule: date,
       scheduleTime: time,
       status: 'em_andamento',
       category: null,
@@ -71,7 +71,17 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
           </button>
         </div>
         <div className="space-y-2.5 p-4">
-          <p className="text-sm font-semibold text-primary">Data: {dateLabel}</p>
+          {/* Data editável: se o usuário marcou o dia/mês errado no calendário,
+              pode corrigir aqui mesmo, sem precisar voltar ao menu e recomeçar. */}
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5">
+            <span className="whitespace-nowrap text-sm font-semibold text-primary">Data</span>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="flex-1 bg-transparent text-base text-foreground outline-none"
+            />
+          </div>
           <input
             value={client}
             onChange={(e) => setClient(e.target.value)}
