@@ -1,9 +1,8 @@
 'use client'
 
 import { Bell, Calendar, DollarSign, Hash, History, Pencil, Share2, ShieldAlert, ShieldCheck, X } from 'lucide-react'
-import type { ServiceRecord } from '@/lib/types'
-import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, isWarrantyExpired, isWarrantyExpiringSoon, warrantyDaysRemaining } from '@/lib/types'
-import { fullDateTime } from '@/lib/format'
+import type { DateFormat, ServiceRecord } from '@/lib/types'
+import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, formatDateStr, isWarrantyExpired, isWarrantyExpiringSoon, warrantyDaysRemaining } from '@/lib/types'
 
 interface ViewRecordModalProps {
   record: ServiceRecord | null
@@ -12,9 +11,10 @@ interface ViewRecordModalProps {
   onShare: (record: ServiceRecord) => void
   onZoomPhoto: (photos: string[], index: number) => void
   onShowHistory?: (record: ServiceRecord) => void
+  dateFormat?: DateFormat
 }
 
-export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto, onShowHistory }: ViewRecordModalProps) {
+export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto, onShowHistory, dateFormat = 'dd/mm/yyyy' }: ViewRecordModalProps) {
   if (!record) return null
 
   const warrantyExpired = isWarrantyExpired(record)
@@ -58,7 +58,7 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto,
             {record.schedule && (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-sm font-bold text-primary-foreground">
                 <Bell className="size-3.5" />
-                {new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR')} {record.scheduleTime?.slice(0, 5)}
+                {formatDateStr(record.schedule, dateFormat)} {record.scheduleTime?.slice(0, 5)}
               </span>
             )}
             {record.category && (
@@ -122,7 +122,7 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto,
           )}
 
           <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Calendar className="size-3.5 text-primary" /> Criado em {fullDateTime(record.createdAt)}
+            <Calendar className="size-3.5 text-primary" /> Criado em {formatDateStr(record.createdAt, dateFormat)} às {new Date(record.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
           </p>
 
           {onShowHistory && (record.plate || record.clientName) && (

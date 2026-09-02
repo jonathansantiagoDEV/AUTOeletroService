@@ -10,13 +10,14 @@ const STATUS_ICONS = {
   concluido: CheckCircle2,
   aguardando_peca: PackageSearch,
 } as const
-import type { FontScale, ServiceCategory, ServiceRecord, ServiceStatus } from '@/lib/types'
+import type { AppSettings, FontScale, ServiceCategory, ServiceRecord, ServiceStatus } from '@/lib/types'
 import { CATEGORY_LABELS, FONT_SCALE_VALUES, STATUS_LABELS, STATUS_LABELS_SHORT, STATUS_COLORS, isPendingSchedule } from '@/lib/types'
 import { parseCurrency } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import { normalizeImageOrientation } from '@/lib/image'
 import { generateBulkReportBlob } from '@/lib/pdf'
 import { playAlertSound, unlockAudio } from '@/lib/alert-sound'
+import { computeAchievements, DEFAULT_APP_SETTINGS, hashPin, loadSettings, saveSettings } from '@/lib/settings'
 import {
   loadRecords,
   upsertRecord,
@@ -42,6 +43,9 @@ import { SalesChartModal } from './sales-chart-modal'
 import { OnboardingModal } from './onboarding-modal'
 import { HelpModal } from './help-modal'
 import { ConfirmModal } from './confirm-modal'
+import { PinPad } from './pin-pad'
+import { AchievementsScreen } from './achievements-screen'
+import { LanguageModal } from './language-modal'
 import { useToast } from './toast'
 
 const ALERTED_STORAGE_KEY = 'autoservicos_alerted_schedules'
@@ -63,6 +67,12 @@ export function AutoservicosApp() {
 
   const [dark, setDark] = useState(false)
   const [fontScale, setFontScale] = useState<FontScale>('normal')
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_APP_SETTINGS)
+  const [settingsReady, setSettingsReady] = useState(false)
+  const [languageOpen, setLanguageOpen] = useState(false)
+  const [achievementsOpen, setAchievementsOpen] = useState(false)
+  const [pinFlow, setPinFlow] = useState<'locked' | 'setup' | 'verify-disable' | 'verify-change' | null>(null)
+  const [pinError, setPinError] = useState<string | null>(null)
 
   const [editorOpen, setEditorOpen] = useState(false)
   const [editing, setEditing] = useState<ServiceRecord | null>(null)
@@ -100,10 +110,19 @@ export function AutoservicosApp() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!localStorage.getItem('autoservicos_onboarding_seen')) {
+    const saved = loadSettings()
+    setAppSettings(saved)
+    setSettingsReady(true)
+    if (saved.pinHash) setPinFlow('locked')
+    if (!saved.skipOnboarding && !localStorage.getItem('autoservicos_onboarding_seen')) {
       setOnboardingOpen(true)
     }
   }, [])
+
+  useEffect(() => {
+    if (!settingsReady) return
+    saveSettings(appSettings)
+  }, [appSettings, settingsReady])
 
   // Carrega do localStorage quais agendamentos já dispararam alerta, para não repetir
   // o som/piscar toda vez que o app é reaberto.
@@ -149,28 +168,29 @@ export function AutoservicosApp() {
 
       if (justDue.length > 0) {
         localStorage.setItem(ALERTED_STORAGE_KEY, JSON.stringify(Array.from(alertedRef.current)))
-        setBlinkingIds((prev) => new Set([...prev, ...justDue]))
-        playAlertSound()
-        const rec = records.find((r) => r.id === justDue[0])
-        showToast(
-          `🔔 Chegou a hora do agendamento${rec ? ` de ${rec.clientName || 'cliente'}` : ''}!`,
-          'info',
-        )
-        // Para de piscar depois de um tempo, mas o registro continua na tela principal
-        setTimeout(() => {
-          setBlinkingIds((prev) => {
-            const next = new Set(prev)
-            justDue.forEach((id) => next.delete(id))
-            return next
-          })
-        }, 60000)
+        if (appSettings.notificationsEnabled) {
+          setBlinkingIds((prev) => new Set([...prev, ...justDue]))
+          playAlertSound()
+          const rec = records.find((r) => r.id === justDue[0])
+          showToast(
+            `🔔 Chegou a hora do agendamento${rec ? ` de ${rec.clientName || 'cliente'}` : ''}!`,
+            'info',
+          )
+          setTimeout(() => {
+            setBlinkingIds((prev) => {
+              const next = new Set(prev)
+              justDue.forEach((id) => next.delete(id))
+              return next
+            })
+          }, 60000)
+        }
       }
     }
 
     checkDue()
     const interval = setInterval(checkDue, 20000)
     return () => clearInterval(interval)
-  }, [records, loaded, showToast])
+  }, [records, loaded, showToast, appSettings.notificationsEnabled])
 
   function closeOnboarding() {
     setOnboardingOpen(false)
@@ -178,6 +198,39 @@ export function AutoservicosApp() {
       localStorage.setItem('autoservicos_onboarding_seen', '1')
     }
   }
+  function handleChangeSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
+    setAppSettings((prev) => ({ ...prev, [key]: value }))
+    if (key === 'skipOnboarding' && typeof window !== 'undefined') {
+      if (value) localStorage.setItem('autoservicos_onboarding_seen', '1')
+      else localStorage.removeItem('autoservicos_onboarding_seen')
+    }
+  }
+
+  async function handlePinSubmit(pin: string) {
+    const hashed = await hashPin(pin)
+    if (pinFlow === 'setup') {
+      setAppSettings((prev) => ({ ...prev, pinHash: hashed }))
+      setPinFlow(null)
+      setPinError(null)
+      showToast('🔒 PIN configurado com sucesso!', 'success')
+      return
+    }
+    if (!appSettings.pinHash || hashed !== appSettings.pinHash) {
+      setPinError('PIN incorreto. Tente novamente.')
+      return
+    }
+    setPinError(null)
+    if (pinFlow === 'verify-disable') {
+      setAppSettings((prev) => ({ ...prev, pinHash: null }))
+      setPinFlow(null)
+      showToast('🔓 Bloqueio por PIN removido', 'success')
+    } else if (pinFlow === 'verify-change') {
+      setPinFlow('setup')
+    } else {
+      setPinFlow(null)
+    }
+  }
+
   const [deleteTarget, setDeleteTarget] = useState<ServiceRecord | null>(null)
   const [clearAllOpen, setClearAllOpen] = useState(false)
 
@@ -444,6 +497,7 @@ export function AutoservicosApp() {
 
   const todayStr = now.toISOString().slice(0, 10)
   const todaySchedules = records.filter((r) => r.schedule === todayStr)
+  const achievements = useMemo(() => computeAchievements(records), [records])
 
   // Nome exibido no cabeçalho ("Olá, Valter!"). O app só coleta e-mail no
   // cadastro (sem campo de nome), então usamos a parte antes do "@" como
@@ -456,6 +510,14 @@ export function AutoservicosApp() {
     if (!firstWord) return null
     return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()
   })()
+
+  if (!settingsReady) {
+    return <div className="flex h-[100dvh] items-center justify-center bg-background text-sm font-semibold text-muted-foreground">Carregando preferências...</div>
+  }
+
+  if (pinFlow === 'locked') {
+    return <PinPad open mode="unlock" error={pinError} onSubmit={handlePinSubmit} />
+  }
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background shadow-2xl sm:my-4 sm:h-[calc(100dvh-2rem)] sm:rounded-3xl sm:border sm:border-border">
@@ -702,6 +764,8 @@ export function AutoservicosApp() {
           setInitialPhotos([])
         }}
         onSave={handleSaveRecord}
+        defaultCategory={appSettings.defaultCategory}
+        smartPaste={appSettings.smartPaste}
       />
       <ViewRecordModal
         record={viewing}
@@ -714,6 +778,7 @@ export function AutoservicosApp() {
         onShare={(r) => setSharing(r)}
         onZoomPhoto={(photos, index) => setZoomPhoto({ photos, index })}
         onShowHistory={(r) => setHistoryFor(r)}
+        dateFormat={appSettings.dateFormat}
       />
       <ClientHistoryModal
         open={!!historyFor}
@@ -739,6 +804,7 @@ export function AutoservicosApp() {
           setEditorOpen(true)
         }}
         onDelete={handleDelete}
+        dateFormat={appSettings.dateFormat}
       />
       <CategoryFilterModal
         open={categoryModalOpen}
@@ -748,7 +814,7 @@ export function AutoservicosApp() {
       />
       <SalesChartModal open={salesChartOpen} records={records} onClose={() => setSalesChartOpen(false)} />
       <ScheduleModal dateStr={scheduleDate} onClose={() => setScheduleDate(null)} onSave={handleScheduleSave} />
-      <ShareModal record={sharing} onClose={() => setSharing(null)} />
+      <ShareModal record={sharing} onClose={() => setSharing(null)} dateFormat={appSettings.dateFormat} />
       <PhotoZoom
         photos={zoomPhoto?.photos ?? []}
         initialIndex={zoomPhoto?.index ?? 0}
@@ -760,6 +826,7 @@ export function AutoservicosApp() {
         records={records}
         onPickDate={(d) => setScheduleDate(d)}
         onDeleteEvent={handleDeleteEvent}
+        weekStartDay={appSettings.weekStartDay}
       />
       <MainMenu
         open={menuOpen}
@@ -788,6 +855,30 @@ export function AutoservicosApp() {
         onLogout={handleLogout}
         onOptimizePhotos={handleOptimizePhotos}
         optimizing={optimizingPhotos}
+        appSettings={appSettings}
+        onChangeSetting={handleChangeSetting}
+        onOpenLanguage={() => setLanguageOpen(true)}
+        onOpenAchievements={() => setAchievementsOpen(true)}
+        onEnablePin={() => { setPinError(null); setPinFlow('setup') }}
+        onChangePin={() => { setPinError(null); setPinFlow('verify-change') }}
+        onDisablePin={() => { setPinError(null); setPinFlow('verify-disable') }}
+        onLockNow={() => { setSettingsOpen(false); setPinError(null); setPinFlow('locked') }}
+      />
+      <LanguageModal
+        open={languageOpen}
+        value={appSettings.language}
+        onChange={(value) => handleChangeSetting('language', value)}
+        onClose={() => setLanguageOpen(false)}
+      />
+      <AchievementsScreen open={achievementsOpen} achievements={achievements} onClose={() => setAchievementsOpen(false)} />
+      <PinPad
+        open={pinFlow === 'setup' || pinFlow === 'verify-disable' || pinFlow === 'verify-change'}
+        mode={pinFlow === 'setup' ? 'create' : 'verify'}
+        title={pinFlow === 'verify-disable' ? 'Remover bloqueio' : pinFlow === 'verify-change' ? 'Alterar PIN' : undefined}
+        subtitle={pinFlow === 'verify-disable' ? 'Digite o PIN atual para remover a proteção.' : pinFlow === 'verify-change' ? 'Digite o PIN atual antes de criar um novo.' : undefined}
+        error={pinError}
+        onSubmit={handlePinSubmit}
+        onCancel={() => { setPinFlow(null); setPinError(null) }}
       />
       <OnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
       <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />

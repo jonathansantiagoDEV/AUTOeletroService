@@ -138,3 +138,39 @@ export const FONT_SCALE_VALUES: Record<FontScale, string> = {
   large: '1.25',
   xlarge: '1.4',
 }
+
+
+export type DateFormat = 'dd/mm/yyyy' | 'mm/dd/yyyy'
+export type WeekStartDay = 'sunday' | 'monday'
+export type AppLanguage = 'pt-BR'
+
+export interface AppSettings {
+  notificationsEnabled: boolean
+  skipOnboarding: boolean
+  defaultCategory: ServiceCategory | null
+  smartPaste: boolean
+  dateFormat: DateFormat
+  weekStartDay: WeekStartDay
+  language: AppLanguage
+  pinHash: string | null
+}
+
+export interface AchievementProgress {
+  id: string
+  title: string
+  description: string
+  current: number
+  target: number
+  unlocked: boolean
+  icon: 'spark' | 'service' | 'check' | 'client' | 'value'
+}
+
+export function formatDateStr(value: string | Date | null | undefined, format: DateFormat = 'dd/mm/yyyy'): string {
+  if (!value) return '---'
+  const d = value instanceof Date ? value : new Date(value.includes('T') ? value : `${value}T00:00:00`)
+  if (Number.isNaN(d.getTime())) return '---'
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return format === 'mm/dd/yyyy' ? `${month}/${day}/${year}` : `${day}/${month}/${year}`
+}

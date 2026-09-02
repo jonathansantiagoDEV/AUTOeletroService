@@ -1,16 +1,18 @@
 'use client'
 
 import { Download, Mail, MessageCircle, Share2, X } from 'lucide-react'
-import type { ServiceRecord } from '@/lib/types'
+import type { DateFormat, ServiceRecord } from '@/lib/types'
+import { formatDateStr } from '@/lib/types'
 import { generatePDFBlob, pdfFileName } from '@/lib/pdf'
 import { useToast } from './toast'
 
 interface ShareModalProps {
   record: ServiceRecord | null
   onClose: () => void
+  dateFormat?: DateFormat
 }
 
-function buildMessage(record: ServiceRecord): string {
+function buildMessage(record: ServiceRecord, dateFormat: DateFormat): string {
   const lines = [
     '*AUTOSERVIÇOS*',
     '',
@@ -20,14 +22,14 @@ function buildMessage(record: ServiceRecord): string {
   if (record.price) lines.push(`*Preço:* ${record.price}`)
   if (record.schedule) {
     lines.push(
-      `*Agendamento:* ${new Date(record.schedule + 'T00:00:00').toLocaleDateString('pt-BR')} às ${record.scheduleTime || '--:--'}`,
+      `*Agendamento:* ${formatDateStr(record.schedule, dateFormat)} às ${record.scheduleTime || '--:--'}`,
     )
   }
   lines.push('', '*Descrição:*', record.noteText || 'Sem descrição')
   return lines.join('\n')
 }
 
-export function ShareModal({ record, onClose }: ShareModalProps) {
+export function ShareModal({ record, onClose, dateFormat = 'dd/mm/yyyy' }: ShareModalProps) {
   const showToast = useToast()
   if (!record) return null
 
@@ -56,7 +58,7 @@ export function ShareModal({ record, onClose }: ShareModalProps) {
       const file = new File([blob], pdfFileName(record), { type: 'application/pdf' })
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
       if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
-        await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record) })
+        await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record, dateFormat) })
         onClose()
         return
       }
@@ -68,13 +70,13 @@ export function ShareModal({ record, onClose }: ShareModalProps) {
     // para o usuário anexar o PDF manualmente na conversa.
     showToast('📄 PDF baixado! Anexe o arquivo na conversa do WhatsApp', 'info')
     downloadPDF()
-    const text = encodeURIComponent(buildMessage(record))
+    const text = encodeURIComponent(buildMessage(record, dateFormat))
     window.open(`https://wa.me/?text=${text}`, '_blank')
   }
 
   function shareEmail() {
     const subject = encodeURIComponent(`Autoserviços - ${record.clientName || 'Documento'}`)
-    const body = encodeURIComponent(buildMessage(record).replace(/\*/g, ''))
+    const body = encodeURIComponent(buildMessage(record, dateFormat).replace(/\*/g, ''))
     window.location.href = `mailto:?subject=${subject}&body=${body}`
     onClose()
   }
@@ -85,7 +87,7 @@ export function ShareModal({ record, onClose }: ShareModalProps) {
       const file = new File([blob], pdfFileName(record), { type: 'application/pdf' })
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
       if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
-        await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record) })
+        await nav.share({ files: [file], title: 'Autoserviços', text: buildMessage(record, dateFormat) })
         onClose()
       } else {
         // O sistema não suporta compartilhar o arquivo PDF diretamente (comum em apps

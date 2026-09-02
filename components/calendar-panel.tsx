@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, X } from 'lucide-react'
-import type { ServiceRecord } from '@/lib/types'
+import type { ServiceRecord, WeekStartDay } from '@/lib/types'
 import { DAY_NAMES, MONTH_NAMES, toDateStr } from '@/lib/format'
 
 interface CalendarPanelProps {
@@ -11,9 +11,10 @@ interface CalendarPanelProps {
   records: ServiceRecord[]
   onPickDate: (dateStr: string) => void
   onDeleteEvent: (id: string) => void
+  weekStartDay?: WeekStartDay
 }
 
-export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEvent }: CalendarPanelProps) {
+export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEvent, weekStartDay = 'sunday' }: CalendarPanelProps) {
   const now = new Date()
   const [month, setMonth] = useState(now.getMonth())
   const [year, setYear] = useState(now.getFullYear())
@@ -22,7 +23,8 @@ export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEven
   const [selectedDate, setSelectedDate] = useState(todayStr)
 
   const cells = useMemo(() => {
-    const firstDay = new Date(year, month, 1).getDay()
+    const nativeFirstDay = new Date(year, month, 1).getDay()
+    const firstDay = weekStartDay === 'monday' ? (nativeFirstDay + 6) % 7 : nativeFirstDay
     const daysInMonth = new Date(year, month + 1, 0).getDate()
     const daysInPrev = new Date(year, month, 0).getDate()
     const result: { day: number; dateStr: string | null; other: boolean }[] = []
@@ -33,7 +35,7 @@ export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEven
       result.push({ day: j, dateStr: toDateStr(year, month, j), other: false })
     }
     return result
-  }, [month, year])
+  }, [month, year, weekStartDay])
 
   const events = records
     .filter((r) => r.schedule && r.schedule === selectedDate)
@@ -57,6 +59,8 @@ export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEven
     setSelectedDate(todayStr)
   }
 
+
+  const orderedDayNames = weekStartDay === 'monday' ? [...DAY_NAMES.slice(1), DAY_NAMES[0]] : DAY_NAMES
   // Ao escolher um dia, marca a data (abre o agendamento) e já fecha o
   // calendário, evitando que o pop-up fique aberto por cima da tela principal.
   function handleDayClick(dateStr: string) {
@@ -99,7 +103,7 @@ export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEven
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center">
-          {DAY_NAMES.map((d) => (
+          {orderedDayNames.map((d) => (
             <div key={d} className="py-1 text-xs font-bold text-muted-foreground">
               {d}
             </div>

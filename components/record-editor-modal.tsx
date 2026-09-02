@@ -27,9 +27,11 @@ interface RecordEditorModalProps {
   userId: string | null
   onClose: () => void
   onSave: (record: ServiceRecord) => Promise<boolean> | void
+  defaultCategory?: ServiceCategory | null
+  smartPaste?: boolean
 }
 
-export function RecordEditorModal({ open, editing, initialPhotos, userId, onClose, onSave }: RecordEditorModalProps) {
+export function RecordEditorModal({ open, editing, initialPhotos, userId, onClose, onSave, defaultCategory = null, smartPaste = true }: RecordEditorModalProps) {
   const showToast = useToast()
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
@@ -80,7 +82,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
       setPhotos([])
       setStyle(DEFAULT_TEXT_STYLE)
       setStatus('em_andamento')
-      setCategory(null)
+      setCategory(defaultCategory)
       setSignature(null)
       setWarrantyUntil(null)
       setSchedule(null)
@@ -105,7 +107,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
     setShowFonts(false)
     setShowColors(false)
     setSaving(false)
-  }, [open, editing, initialPhotos, userId, showToast])
+  }, [open, editing, initialPhotos, userId, showToast, defaultCategory])
 
   // Para a gravação de voz automaticamente se o modal for fechado no meio do ditado
   useEffect(() => {
@@ -216,6 +218,27 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
     setClientPhone(formatted)
   }
 
+  function handleSmartPaste(event: React.ClipboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    if (!smartPaste) return
+    const pasted = event.clipboardData.getData('text').trim()
+    if (!pasted) return
+
+    const digits = pasted.replace(/\D/g, '')
+    const plateCandidate = pasted.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 7)
+
+    if (digits.length >= 10 && digits.length <= 13) {
+      event.preventDefault()
+      handlePhoneChange(digits.slice(-11))
+      showToast('📋 Telefone detectado e preenchido automaticamente', 'info')
+      return
+    }
+    if (plateCandidate.length === 7 && isValidPlate(plateCandidate)) {
+      event.preventDefault()
+      setPlate(plateCandidate)
+      showToast('📋 Placa detectada e preenchida automaticamente', 'info')
+    }
+  }
+
   async function handleSave() {
     if (saving) return
     if (uploadingCount > 0) {
@@ -286,12 +309,14 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
             <input
               value={clientName}
               onChange={(e) => setClientName(e.target.value)}
+              onPaste={handleSmartPaste}
               placeholder="Nome do cliente"
               className="col-span-1 rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary sm:col-span-2"
             />
             <input
               value={clientPhone}
               onChange={(e) => handlePhoneChange(e.target.value)}
+              onPaste={handleSmartPaste}
               inputMode="numeric"
               placeholder="Telefone (opcional)"
               maxLength={16}
@@ -300,6 +325,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
             <input
               value={plate}
               onChange={(e) => handlePlateChange(e.target.value)}
+              onPaste={handleSmartPaste}
               placeholder="Placa (ABC1234 ou ABC1D23)"
               maxLength={7}
               className="rounded-lg border border-border bg-background px-3 py-2.5 text-base uppercase text-foreground outline-none focus:border-primary"
@@ -501,6 +527,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
             <textarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
+              onPaste={handleSmartPaste}
               placeholder="Descrição do serviço..."
               rows={4}
               style={editorStyle}

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { ArrowLeft, Bell, Clock, Hash, Pencil, Trash2, UserCircle } from 'lucide-react'
-import type { ServiceRecord } from '@/lib/types'
-import { scheduleDateTime } from '@/lib/types'
+import type { DateFormat, ServiceRecord } from '@/lib/types'
+import { formatDateStr, scheduleDateTime } from '@/lib/types'
 
 interface AgendaPageProps {
   open: boolean
@@ -12,6 +12,7 @@ interface AgendaPageProps {
   onView: (record: ServiceRecord) => void
   onEdit: (record: ServiceRecord) => void
   onDelete: (id: string) => void
+  dateFormat?: DateFormat
 }
 
 // Formata o tempo restante até o agendamento de forma legível ("em 2h 15min", "em 3 dias")
@@ -27,7 +28,7 @@ function timeUntil(target: Date, now: Date): string {
   return `em ${days} dia${days > 1 ? 's' : ''}`
 }
 
-export function AgendaPage({ open, records, onClose, onView, onEdit, onDelete }: AgendaPageProps) {
+export function AgendaPage({ open, records, onClose, onView, onEdit, onDelete, dateFormat = 'dd/mm/yyyy' }: AgendaPageProps) {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -118,7 +119,7 @@ export function AgendaPage({ open, records, onClose, onView, onEdit, onDelete }:
                 <div className="mt-2.5 flex items-center justify-between rounded-lg bg-primary/10 px-3 py-2">
                   <span className="flex items-center gap-1.5 text-sm font-bold text-primary">
                     <Clock className="size-4" />
-                    {dt.toLocaleDateString('pt-BR')} às {record.scheduleTime?.slice(0, 5)}
+                    {formatDateStr(dt, dateFormat)} às {record.scheduleTime?.slice(0, 5)}
                   </span>
                   <span className="text-xs font-semibold text-primary">{timeUntil(dt, now)}</span>
                 </div>
