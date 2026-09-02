@@ -6,12 +6,14 @@ import type { ServiceRecord } from '@/lib/types'
 import { DAY_NAMES, MONTH_NAMES, toDateStr } from '@/lib/format'
 
 interface CalendarPanelProps {
+  open: boolean
+  onClose: () => void
   records: ServiceRecord[]
   onPickDate: (dateStr: string) => void
   onDeleteEvent: (id: string) => void
 }
 
-export function CalendarPanel({ records, onPickDate, onDeleteEvent }: CalendarPanelProps) {
+export function CalendarPanel({ open, onClose, records, onPickDate, onDeleteEvent }: CalendarPanelProps) {
   const now = new Date()
   const [month, setMonth] = useState(now.getMonth())
   const [year, setYear] = useState(now.getFullYear())
@@ -55,91 +57,110 @@ export function CalendarPanel({ records, onPickDate, onDeleteEvent }: CalendarPa
     setSelectedDate(todayStr)
   }
 
+  // Ao escolher um dia, marca a data (abre o agendamento) e já fecha o
+  // calendário, evitando que o pop-up fique aberto por cima da tela principal.
   function handleDayClick(dateStr: string) {
     setSelectedDate(dateStr)
     onPickDate(dateStr)
+    onClose()
   }
 
+  if (!open) return null
+
   return (
-    <div className="animate-slide-in mb-3 rounded-app border border-border bg-card p-3 shadow-[var(--shadow-app)]">
-      <div className="mb-2 flex items-center justify-between">
-        <button onClick={prevMonth} aria-label="Mês anterior" className="rounded-full p-1.5 text-primary hover:bg-background">
-          <ChevronLeft className="size-5" />
-        </button>
-        <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-foreground">
-            {MONTH_NAMES[month]} {year}
-          </span>
-          <button onClick={goToday} className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
-            Hoje
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[4500] flex items-center justify-center bg-black/50 p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="animate-fade-up w-full max-w-[380px] rounded-app border border-border bg-card p-3 shadow-[var(--shadow-app)]"
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <button onClick={prevMonth} aria-label="Mês anterior" className="rounded-full p-1.5 text-primary hover:bg-background">
+            <ChevronLeft className="size-5" />
           </button>
-        </div>
-        <button onClick={nextMonth} aria-label="Próximo mês" className="rounded-full p-1.5 text-primary hover:bg-background">
-          <ChevronRight className="size-5" />
-        </button>
-      </div>
-
-      <div className="grid grid-cols-7 gap-1 text-center">
-        {DAY_NAMES.map((d) => (
-          <div key={d} className="py-1 text-xs font-bold text-muted-foreground">
-            {d}
-          </div>
-        ))}
-        {cells.map((cell, i) => {
-          if (cell.other) {
-            return (
-              <div key={i} className="py-1.5 text-sm text-muted-foreground/40">
-                {cell.day}
-              </div>
-            )
-          }
-          const hasEvent = records.some((r) => r.schedule === cell.dateStr)
-          const isToday = cell.dateStr === todayStr
-          const isSelected = cell.dateStr === selectedDate
-          return (
-            <button
-              key={i}
-              onClick={() => cell.dateStr && handleDayClick(cell.dateStr)}
-              className={`relative rounded-lg py-1.5 text-sm transition ${
-                isSelected
-                  ? 'bg-primary font-bold text-primary-foreground'
-                  : isToday
-                    ? 'bg-primary/15 font-bold text-primary'
-                    : 'text-foreground hover:bg-background'
-              }`}
-            >
-              {cell.day}
-              {hasEvent && !isSelected && (
-                <span className="absolute bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-primary" />
-              )}
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-foreground">
+              {MONTH_NAMES[month]} {year}
+            </span>
+            <button onClick={goToday} className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
+              Hoje
             </button>
-          )
-        })}
-      </div>
-
-      <div className="mt-3 border-t border-border pt-2">
-        {events.length === 0 ? (
-          <div className="py-2 text-center text-sm text-muted-foreground">Nenhum agendamento</div>
-        ) : (
-          <div className="space-y-1.5">
-            {events.map((e) => (
-              <div key={e.id} className="flex items-center gap-2 rounded-lg bg-background px-2.5 py-1.5">
-                <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-                  {e.scheduleTime ? e.scheduleTime.slice(0, 5) : '--:--'}
-                </span>
-                <span className="flex-1 truncate text-sm font-semibold text-foreground">{e.clientName}</span>
-                <button
-                  onClick={() => onDeleteEvent(e.id)}
-                  aria-label="Remover agendamento"
-                  className="rounded-full p-1 text-muted-foreground hover:text-danger"
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-            ))}
           </div>
-        )}
+          <div className="flex items-center gap-0.5">
+            <button onClick={nextMonth} aria-label="Próximo mês" className="rounded-full p-1.5 text-primary hover:bg-background">
+              <ChevronRight className="size-5" />
+            </button>
+            <button onClick={onClose} aria-label="Fechar calendário" className="rounded-full p-1.5 text-muted-foreground hover:bg-background">
+              <X className="size-5" />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-7 gap-1 text-center">
+          {DAY_NAMES.map((d) => (
+            <div key={d} className="py-1 text-xs font-bold text-muted-foreground">
+              {d}
+            </div>
+          ))}
+          {cells.map((cell, i) => {
+            if (cell.other) {
+              return (
+                <div key={i} className="py-1.5 text-sm text-muted-foreground/40">
+                  {cell.day}
+                </div>
+              )
+            }
+            const hasEvent = records.some((r) => r.schedule === cell.dateStr)
+            const isToday = cell.dateStr === todayStr
+            const isSelected = cell.dateStr === selectedDate
+            return (
+              <button
+                key={i}
+                onClick={() => cell.dateStr && handleDayClick(cell.dateStr)}
+                className={`relative rounded-lg py-1.5 text-sm transition ${
+                  isSelected
+                    ? 'bg-primary font-bold text-primary-foreground'
+                    : isToday
+                      ? 'bg-primary/15 font-bold text-primary'
+                      : 'text-foreground hover:bg-background'
+                }`}
+              >
+                {cell.day}
+                {hasEvent && !isSelected && (
+                  <span className="absolute bottom-0.5 left-1/2 size-1.5 -translate-x-1/2 rounded-full bg-primary" />
+                )}
+              </button>
+            )
+          })}
+        </div>
+
+        <div className="mt-3 border-t border-border pt-2">
+          {events.length === 0 ? (
+            <div className="py-2 text-center text-sm text-muted-foreground">Nenhum agendamento</div>
+          ) : (
+            <div className="space-y-1.5">
+              {events.map((e) => (
+                <div key={e.id} className="flex items-center gap-2 rounded-lg bg-background px-2.5 py-1.5">
+                  <span className="rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
+                    {e.scheduleTime ? e.scheduleTime.slice(0, 5) : '--:--'}
+                  </span>
+                  <span className="flex-1 truncate text-sm font-semibold text-foreground">{e.clientName}</span>
+                  <button
+                    onClick={() => onDeleteEvent(e.id)}
+                    aria-label="Remover agendamento"
+                    className="rounded-full p-1 text-muted-foreground hover:text-danger"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
+

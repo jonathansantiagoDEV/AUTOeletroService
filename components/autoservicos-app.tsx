@@ -589,14 +589,6 @@ export function AutoservicosApp() {
 
       {/* Conteúdo */}
       <main className="thin-scroll flex-1 overflow-y-auto px-4 py-3">
-        {calendarOpen && (
-          <CalendarPanel
-            records={records}
-            onPickDate={(d) => setScheduleDate(d)}
-            onDeleteEvent={handleDeleteEvent}
-          />
-        )}
-
         {!loaded ? (
           <div className="space-y-2.5 pb-24">
             {[0, 1, 2].map((i) => (
@@ -753,6 +745,13 @@ export function AutoservicosApp() {
         photos={zoomPhoto?.photos ?? []}
         initialIndex={zoomPhoto?.index ?? 0}
         onClose={() => setZoomPhoto(null)}
+      />
+      <CalendarPanel
+        open={calendarOpen}
+        onClose={() => setCalendarOpen(false)}
+        records={records}
+        onPickDate={(d) => setScheduleDate(d)}
+        onDeleteEvent={handleDeleteEvent}
       />
       <MainMenu
         open={menuOpen}

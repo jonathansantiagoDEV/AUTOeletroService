@@ -43,6 +43,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
   const [category, setCategory] = useState<ServiceCategory | null>(null)
   const [signature, setSignature] = useState<string | null>(null)
   const [warrantyUntil, setWarrantyUntil] = useState<string | null>(null)
+  const [schedule, setSchedule] = useState<string | null>(null)
+  const [scheduleTime, setScheduleTime] = useState<string | null>(null)
   const [signatureOpen, setSignatureOpen] = useState(false)
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
@@ -64,6 +66,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
       setCategory(editing.category ?? null)
       setSignature(editing.signature ?? null)
       setWarrantyUntil(editing.warrantyUntil ?? null)
+      setSchedule(editing.schedule ?? null)
+      setScheduleTime(editing.scheduleTime ?? null)
     } else {
       setClientName('')
       setClientPhone('')
@@ -76,6 +80,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
       setCategory(null)
       setSignature(null)
       setWarrantyUntil(null)
+      setSchedule(null)
+      setScheduleTime(null)
       // Fotos vindas do botão de câmera rápida (fora do editor) ainda estão em base64 —
       // envia para o Storage aqui, do mesmo jeito que as fotos escolhidas dentro do editor.
       if (initialPhotos && initialPhotos.length > 0 && userId) {
@@ -180,8 +186,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
       noteText: noteText.trim(),
       photos,
       textStyle: style,
-      schedule: editing?.schedule ?? null,
-      scheduleTime: editing?.scheduleTime ?? null,
+      schedule,
+      scheduleTime: schedule ? (scheduleTime || '12:00') : null,
       status,
       category,
       signature,
@@ -305,6 +311,38 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
                 onClick={() => setWarrantyUntil(null)}
                 className="rounded-full p-1 text-muted-foreground hover:text-danger"
                 aria-label="Remover garantia"
+              >
+                <X className="size-4" />
+              </button>
+            )}
+          </div>
+
+          {/* Agendamento (data e horário) */}
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2.5">
+            <span className="whitespace-nowrap text-sm font-semibold text-muted-foreground">Agendamento</span>
+            <input
+              type="date"
+              value={schedule ?? ''}
+              onChange={(e) => setSchedule(e.target.value || null)}
+              className="flex-1 bg-transparent text-base text-foreground outline-none"
+            />
+            {schedule && (
+              <input
+                type="time"
+                value={scheduleTime ?? '12:00'}
+                onChange={(e) => setScheduleTime(e.target.value)}
+                className="w-[90px] shrink-0 bg-transparent text-base text-foreground outline-none"
+              />
+            )}
+            {schedule && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSchedule(null)
+                  setScheduleTime(null)
+                }}
+                className="rounded-full p-1 text-muted-foreground hover:text-danger"
+                aria-label="Remover agendamento"
               >
                 <X className="size-4" />
               </button>
