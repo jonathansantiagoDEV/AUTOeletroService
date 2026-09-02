@@ -58,6 +58,8 @@ export function AutoservicosApp() {
   const [records, setRecords] = useState<ServiceRecord[]>([])
   const [loaded, setLoaded] = useState(false)
   const [search, setSearch] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   const [statusFilter, setStatusFilter] = useState<ServiceStatus | 'todos'>('todos')
   const [categoryFilter, setCategoryFilter] = useState<ServiceCategory | 'todas'>('todas')
 
@@ -305,6 +307,11 @@ export function AutoservicosApp() {
     if (loaded) localStorage.setItem('autoservicos_dark', dark ? '1' : '0')
   }, [dark, loaded])
 
+  // Autofoco no campo de busca assim que ele é aberto
+  useEffect(() => {
+    if (searchOpen) searchInputRef.current?.focus()
+  }, [searchOpen])
+
   // Escala de fonte
   useEffect(() => {
     // Aplica só na variável --app-font-scale (afeta unicamente o tamanho
@@ -534,6 +541,14 @@ export function AutoservicosApp() {
           <p className="text-[11px] text-white/70">{records.length} registros salvos</p>
         </div>
         <button
+          onClick={() => setSearchOpen(true)}
+          aria-label="Buscar"
+          title="Buscar"
+          className="rounded-full p-2 transition hover:bg-white/15"
+        >
+          <Search className="size-5" />
+        </button>
+        <button
           onClick={() => setHelpOpen(true)}
           aria-label="Ajuda: como funciona o app"
           title="Como funciona o app"
@@ -557,15 +572,35 @@ export function AutoservicosApp() {
 
       {/* Busca */}
       <div className="space-y-2 border-b border-border bg-card px-4 py-2.5">
-        <div className="flex items-center gap-2 rounded-full border border-border bg-background px-3 py-2">
-          <Search className="size-4 shrink-0 text-muted-foreground" />
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por cliente, placa ou nota..."
-            className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-          />
-        </div>
+        {searchOpen && (
+          <div className="flex items-center gap-2 animate-slide-in">
+            <div className="flex flex-1 items-center gap-2 rounded-full border border-border bg-background px-3 py-2">
+              <Search className="size-4 shrink-0 text-muted-foreground" />
+              <input
+                ref={searchInputRef}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setSearchOpen(false)
+                    setSearch('')
+                  }
+                }}
+                placeholder="Buscar por cliente, placa ou nota..."
+                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <button
+              onClick={() => {
+                setSearchOpen(false)
+                setSearch('')
+              }}
+              className="shrink-0 text-sm font-semibold text-primary"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
 
         {/* Filtros de status e categoria */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
