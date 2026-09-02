@@ -21,6 +21,17 @@ export default function DraggableFloatingButton({ children, initial = { x: 20, y
   const moved = useRef(false)
   // true quando o botão está fora do lugar original e ainda "deve" um retorno
   const awaitingReturn = useRef(false)
+  // true enquanto a aba/página está em segundo plano (ex.: câmera nativa do
+  // celular aberta por cima do app) — nesses momentos o navegador pode até
+  // congelar os timers, então tratamos como pausa também
+  const [pageHidden, setPageHidden] = useState(false)
+  const effectivePaused = paused || pageHidden
+
+  useEffect(() => {
+    const onVisibility = () => setPageHidden(document.visibilityState === 'hidden')
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -39,15 +50,15 @@ export default function DraggableFloatingButton({ children, initial = { x: 20, y
   const scheduleReturn = () => {
     awaitingReturn.current = true
     if (returnTimer.current) clearTimeout(returnTimer.current)
-    if (paused) return // não conta enquanto o modal estiver aberto
+    if (effectivePaused) return // não conta enquanto pausado (modal aberto ou app em 2º plano)
     returnTimer.current = setTimeout(doReturn, 5000)
   }
 
-  // Quando "paused" muda: se acabou de pausar (modal abriu), congela a
-  // contagem. Se acabou de despausar (modal fechou) e o botão ainda está
+  // Quando a pausa muda: se acabou de pausar (modal abriu / app foi para 2º
+  // plano), congela a contagem. Se acabou de despausar e o botão ainda está
   // fora do lugar, começa a contar os 5s a partir de agora.
   useEffect(() => {
-    if (paused) {
+    if (effectivePaused) {
       if (returnTimer.current) {
         clearTimeout(returnTimer.current)
         returnTimer.current = null
@@ -56,7 +67,7 @@ export default function DraggableFloatingButton({ children, initial = { x: 20, y
       returnTimer.current = setTimeout(doReturn, 5000)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused, initial.x, initial.y])
+  }, [effectivePaused, initial.x, initial.y])
 
   return <button
     className={`fixed z-50 touch-none ${drag ? 'scale-110 cursor-grabbing' : returning ? 'transition-all duration-500' : ''} ${className}`}
