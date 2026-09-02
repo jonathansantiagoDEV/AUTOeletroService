@@ -17,6 +17,7 @@ import {
   Upload,
   User,
   X,
+  Zap,
 } from 'lucide-react'
 import type { FontScale } from '@/lib/types'
 
@@ -37,6 +38,8 @@ interface SettingsSidebarProps {
   userEmail: string | null
   onLogout: () => void
   onShowTutorial: () => void
+  onOptimizePhotos: () => void
+  optimizing: boolean
 }
 
 const FONT_ORDER: FontScale[] = ['normal', 'medium', 'large', 'xlarge']
@@ -62,6 +65,8 @@ export function SettingsSidebar({
   userEmail,
   onLogout,
   onShowTutorial,
+  onOptimizePhotos,
+  optimizing,
 }: SettingsSidebarProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const [dataOpen, setDataOpen] = useState(false)
@@ -212,6 +217,14 @@ export function SettingsSidebar({
                     e.target.value = ''
                   }}
                 />
+                <button
+                  onClick={onOptimizePhotos}
+                  disabled={optimizing}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-3 font-semibold text-foreground disabled:opacity-60"
+                >
+                  <Zap className="size-4 text-primary" />
+                  {optimizing ? 'Otimizando fotos...' : 'Otimizar fotos antigas (app mais rápido)'}
+                </button>
                 <button
                   onClick={onClearAll}
                   className="flex w-full items-center gap-2 rounded-lg border border-danger/30 bg-danger/10 px-3 py-3 font-semibold text-danger"

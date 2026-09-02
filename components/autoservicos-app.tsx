@@ -17,6 +17,7 @@ import {
   deleteRecord as deleteRecordRemote,
   upsertManyRecords,
   clearAllRecords,
+  migrateLegacyPhotos,
 } from '@/lib/supabase/records'
 import { Logo } from './logo'
 import { RecordCard } from './record-card'
@@ -66,6 +67,24 @@ export function AutoservicosApp() {
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
+  const [optimizingPhotos, setOptimizingPhotos] = useState(false)
+
+  async function handleOptimizePhotos() {
+    if (optimizingPhotos) return
+    setOptimizingPhotos(true)
+    showToast('⚡ Otimizando fotos antigas, aguarde...', 'info')
+    const result = await migrateLegacyPhotos()
+    if (result === null) {
+      showToast('❌ Não foi possível otimizar agora. Tente de novo.', 'error')
+    } else if (result === 0) {
+      showToast('✅ Nenhuma foto antiga encontrada — tudo já otimizado!', 'success')
+    } else {
+      const remoteRecords = await loadRecords()
+      if (remoteRecords) setRecords(remoteRecords)
+      showToast(`✅ ${result} registro(s) otimizado(s)! O app vai carregar mais rápido agora.`, 'success')
+    }
+    setOptimizingPhotos(false)
+  }
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
   const [salesChartOpen, setSalesChartOpen] = useState(false)
 
@@ -721,6 +740,8 @@ export function AutoservicosApp() {
         userEmail={user?.email ?? null}
         onLogout={handleLogout}
         onShowTutorial={() => setOnboardingOpen(true)}
+        onOptimizePhotos={handleOptimizePhotos}
+        optimizing={optimizingPhotos}
       />
       <OnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
       <ConfirmModal

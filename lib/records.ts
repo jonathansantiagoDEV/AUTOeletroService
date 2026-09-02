@@ -20,6 +20,7 @@ interface ServiceRecordRow {
   status: string | null
   category: string | null
   signature: string | null
+  warranty_until: string | null
   created_at: string
 }
 
@@ -38,6 +39,7 @@ function rowToRecord(row: ServiceRecordRow): ServiceRecord {
     status: (row.status as ServiceStatus) ?? 'em_andamento',
     category: (row.category as ServiceCategory) ?? null,
     signature: row.signature ?? null,
+    warrantyUntil: row.warranty_until ?? null,
     createdAt: row.created_at,
   }
 }
@@ -58,11 +60,10 @@ function recordToRow(record: ServiceRecord, userId: string) {
     status: record.status,
     category: record.category ?? null,
     signature: record.signature ?? null,
+    warranty_until: record.warrantyUntil ?? null,
     created_at: record.createdAt,
   }
 }
-
-import { uploadPhoto } from './storage'
 
 export async function getCurrentUser() {
   const supabase = createClient()
@@ -134,45 +135,4 @@ export async function clearAllRecords(): Promise<boolean> {
     return false
   }
   return true
-}
-
-/**
- * Migra fotos antigas guardadas como texto (base64) dentro do registro para o
- * armazenamento de arquivos (Storage), deixando o carregamento do app bem mais
- * rápido. Só mexe em registros que ainda têm fotos no formato antigo.
- * Retorna quantos registros foram otimizados, ou null se algo falhar.
- */
-export async function migrateLegacyPhotos(
-  onProgress?: (done: number, total: number) => void,
-): Promise<number | null> {
-  const supabase = createClient()
-  const user = await getCurrentUser()
-  if (!user) return null
-
-  const all = await loadRecords()
-  if (all === null) return null
-
-  const legacy = all.filter((r) => r.photos.some((p) => p.startsWith('data:')))
-  let migrated = 0
-
-  for (const record of legacy) {
-    const newPhotos: string[] = []
-    for (const photo of record.photos) {
-      if (!photo.startsWith('data:')) {
-        newPhotos.push(photo)
-        continue
-      }
-      const url = await uploadPhoto(photo, user.id)
-      newPhotos.push(url ?? photo) // se falhar, mantém a antiga (não perde a foto)
-    }
-    const { error } = await supabase
-      .from(TABLE)
-      .update({ photos: newPhotos })
-      .eq('id', record.id)
-      .eq('user_id', user.id)
-    if (!error) migrated++
-    onProgress?.(migrated, legacy.length)
-  }
-
-  return migrated
 }
