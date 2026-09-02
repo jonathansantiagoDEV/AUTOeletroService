@@ -677,7 +677,8 @@ export function AutoservicosApp() {
           setEditorOpen(true)
         }}
         aria-label="Novo registro"
-        className="absolute bottom-5 right-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_rgba(139,26,26,0.5)] transition hover:scale-105 hover:bg-primary-dark active:scale-95"
+        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
+        className="absolute right-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_0_8px_rgba(139,26,26,0.15),0_6px_20px_rgba(139,26,26,0.5)] transition hover:scale-105 hover:bg-primary-dark active:scale-95"
       >
         <Plus className="size-7" />
       </button>

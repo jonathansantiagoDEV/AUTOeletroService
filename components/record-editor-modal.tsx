@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bold, Camera, Image as GalleryIcon, Italic, Palette, PenLine, Type, Underline, X } from 'lucide-react'
+import { Bold, Camera, Image as GalleryIcon, Italic, Mic, Palette, PenLine, Type, Underline, X } from 'lucide-react'
 import type { ServiceCategory, ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
 import { CATEGORY_LABELS, CATEGORY_ORDER, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
@@ -45,6 +45,9 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
   const [warrantyUntil, setWarrantyUntil] = useState<string | null>(null)
   const [schedule, setSchedule] = useState<string | null>(null)
   const [scheduleTime, setScheduleTime] = useState<string | null>(null)
+  const [recording, setRecording] = useState(false)
+  const recognitionRef = useRef<any>(null)
+  const dictationBaseRef = useRef('')
   const [signatureOpen, setSignatureOpen] = useState(false)
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
@@ -103,6 +106,57 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
     setShowColors(false)
     setSaving(false)
   }, [open, editing, initialPhotos, userId, showToast])
+
+  // Para a gravação de voz automaticamente se o modal for fechado no meio do ditado
+  useEffect(() => {
+    if (!open && recognitionRef.current) {
+      recognitionRef.current.stop()
+    }
+  }, [open])
+
+  // Ditado por voz: em vez de digitar, o usuário fala e o texto vai sendo
+  // transcrito direto no campo de observação/descrição do serviço.
+  function toggleDictation() {
+    if (recording) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+    if (!SpeechRecognition) {
+      showToast('❌ Seu navegador não suporta ditado por voz', 'error')
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'pt-BR'
+    recognition.continuous = true
+    recognition.interimResults = true
+    dictationBaseRef.current = noteText
+
+    recognition.onresult = (event: any) => {
+      let finalChunk = ''
+      let interimChunk = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) finalChunk += transcript
+        else interimChunk += transcript
+      }
+      if (finalChunk) {
+        dictationBaseRef.current = `${dictationBaseRef.current ? dictationBaseRef.current + ' ' : ''}${finalChunk.trim()}`
+      }
+      setNoteText(`${dictationBaseRef.current}${interimChunk ? ' ' + interimChunk : ''}`.trim())
+    }
+    recognition.onerror = () => {
+      setRecording(false)
+      showToast('❌ Não foi possível captar o áudio', 'error')
+    }
+    recognition.onend = () => {
+      setRecording(false)
+    }
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setRecording(true)
+  }
 
   function handleFiles(files: FileList | null) {
     if (!files) return
@@ -443,16 +497,32 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
             </div>
           )}
 
-          <textarea
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            placeholder="Descrição do serviço..."
-            rows={4}
-            style={editorStyle}
-            className={`w-full resize-y rounded-lg border border-border bg-background px-3 py-2.5 outline-none focus:border-primary ${
-              usingDefaultColor ? 'text-foreground' : ''
-            }`}
-          />
+          <div className={`relative ${recording ? 'mb-4' : ''}`}>
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Descrição do serviço..."
+              rows={4}
+              style={editorStyle}
+              className={`w-full resize-y rounded-lg border bg-background px-3 py-2.5 pr-12 outline-none focus:border-primary ${
+                recording ? 'border-danger' : 'border-border'
+              } ${usingDefaultColor ? 'text-foreground' : ''}`}
+            />
+            <button
+              type="button"
+              onClick={toggleDictation}
+              aria-label={recording ? 'Parar ditado por voz' : 'Falar a observação em vez de digitar'}
+              title={recording ? 'Parar ditado por voz' : 'Falar a observação em vez de digitar'}
+              className={`absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full transition ${
+                recording ? 'animate-pulse bg-danger text-white' : 'bg-primary text-primary-foreground hover:bg-primary-dark'
+              }`}
+            >
+              <Mic className="size-4" />
+            </button>
+            {recording && (
+              <span className="absolute -bottom-5 right-1 text-xs font-semibold text-danger">Ouvindo...</span>
+            )}
+          </div>
 
           {/* Fotos */}
           <div className="flex flex-wrap gap-2">

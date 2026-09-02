@@ -1,6 +1,6 @@
 'use client'
 
-import { BarChart3, CalendarClock, CalendarDays, Settings, X } from 'lucide-react'
+import { BarChart3, CalendarClock, CalendarDays, ChevronRight, Settings, X } from 'lucide-react'
 
 const DEVELOPER_WHATSAPP = '5571993239156'
 
@@ -16,44 +16,51 @@ interface MainMenuProps {
   onOpenSettings: () => void
 }
 
-// Item de navegação do menu: ícone com fundo colorido + rótulo + badge opcional
+// Linha de navegação de largura total: ícone com fundo colorido + rótulo +
+// pontinho vermelho (quando há pendências) + seta. Mesmo padrão visual das
+// Configurações, pra manter o menu consistente com o resto do app.
 function MenuItem({
   icon: Icon,
   label,
   active,
-  badge,
+  hasBadge,
   onClick,
 }: {
   icon: React.ElementType
   label: string
   active?: boolean
-  badge?: number
+  hasBadge?: boolean
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      className={`inline-flex w-fit max-w-full items-center gap-2.5 rounded-full border px-3 py-2 text-left transition active:scale-[0.98] ${
-        active ? 'border-primary bg-primary/10' : 'border-border bg-background'
+      className={`flex w-full items-center gap-3 px-3.5 py-3 text-left transition active:bg-black/5 dark:active:bg-white/5 ${
+        active ? 'bg-primary/10' : ''
       }`}
     >
       <div
-        className="relative flex size-7 shrink-0 items-center justify-center rounded-full"
+        className="relative flex size-8 shrink-0 items-center justify-center rounded-lg"
         style={{
           backgroundColor: 'color-mix(in srgb, var(--primary) 12%, transparent)',
           color: 'var(--primary)',
         }}
       >
-        <Icon className="size-3.5" />
-        {!!badge && badge > 0 && (
-          <span className="absolute -right-1 -top-1 flex size-3.5 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
-            {badge}
-          </span>
-        )}
+        <Icon className="size-4" />
+        {hasBadge && <span className="absolute -right-0.5 -top-0.5 size-2.5 rounded-full border-2 border-card bg-primary" />}
       </div>
-      <span className="whitespace-nowrap text-sm font-semibold text-foreground">{label}</span>
+      <span className="flex-1 text-sm font-semibold text-foreground">{label}</span>
+      <ChevronRight className="size-4 text-muted-foreground" />
     </button>
   )
+}
+
+function Divider() {
+  return <div className="ml-[46px] h-px bg-border" />
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return <div className="overflow-hidden rounded-2xl border border-border bg-background">{children}</div>
 }
 
 export function MainMenu({
@@ -91,42 +98,60 @@ export function MainMenu({
           </button>
         </div>
 
-        <div className="thin-scroll flex flex-1 flex-col items-start gap-2 overflow-y-auto p-4">
-          <MenuItem
-            icon={CalendarDays}
-            label="Calendário"
-            active={calendarActive}
-            badge={scheduledCount}
-            onClick={() => {
-              onToggleCalendar()
-              onClose()
-            }}
-          />
-          <MenuItem
-            icon={CalendarClock}
-            label="Agendamentos"
-            badge={pendingCount}
-            onClick={() => {
-              onOpenAgenda()
-              onClose()
-            }}
-          />
-          <MenuItem
-            icon={BarChart3}
-            label="Dashboard"
-            onClick={() => {
-              onOpenDashboard()
-              onClose()
-            }}
-          />
-          <MenuItem
-            icon={Settings}
-            label="Configurações"
-            onClick={() => {
-              onOpenSettings()
-              onClose()
-            }}
-          />
+        <div className="thin-scroll flex-1 space-y-4 overflow-y-auto p-4">
+          <div>
+            <p className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-primary">Agenda</p>
+            <Card>
+              <MenuItem
+                icon={CalendarDays}
+                label="Calendário"
+                active={calendarActive}
+                hasBadge={scheduledCount > 0}
+                onClick={() => {
+                  onToggleCalendar()
+                  onClose()
+                }}
+              />
+              <Divider />
+              <MenuItem
+                icon={CalendarClock}
+                label="Agendamentos"
+                hasBadge={pendingCount > 0}
+                onClick={() => {
+                  onOpenAgenda()
+                  onClose()
+                }}
+              />
+            </Card>
+          </div>
+
+          <div>
+            <p className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-primary">Visão geral</p>
+            <Card>
+              <MenuItem
+                icon={BarChart3}
+                label="Dashboard"
+                onClick={() => {
+                  onOpenDashboard()
+                  onClose()
+                }}
+              />
+            </Card>
+          </div>
+
+          <div>
+            <p className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-primary">Sistema</p>
+            <Card>
+              <MenuItem
+                icon={Settings}
+                label="Configurações"
+                onClick={() => {
+                  onOpenSettings()
+                  onClose()
+                }}
+              />
+            </Card>
+          </div>
         </div>
 
         <div

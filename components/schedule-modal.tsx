@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { Mic, X } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
 import { DEFAULT_TEXT_STYLE } from '@/lib/types'
 import { generateId } from '@/lib/storage'
@@ -20,6 +20,9 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
   const [date, setDate] = useState('')
   const [time, setTime] = useState('12:00')
   const [note, setNote] = useState('')
+  const [recording, setRecording] = useState(false)
+  const recognitionRef = useRef<any>(null)
+  const dictationBaseRef = useRef('')
 
   useEffect(() => {
     if (dateStr) {
@@ -28,10 +31,55 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
       setDate(dateStr)
       setTime('12:00')
       setNote('')
+    } else {
+      recognitionRef.current?.stop()
     }
   }, [dateStr])
 
   if (!dateStr) return null
+
+  // Ditado por voz: em vez de digitar, o usuário fala e o texto vai para a observação.
+  function toggleDictation() {
+    if (recording) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
+    if (!SpeechRecognition) {
+      showToast('❌ Seu navegador não suporta ditado por voz', 'error')
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = 'pt-BR'
+    recognition.continuous = true
+    recognition.interimResults = true
+    dictationBaseRef.current = note
+
+    recognition.onresult = (event: any) => {
+      let finalChunk = ''
+      let interimChunk = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript
+        if (event.results[i].isFinal) finalChunk += transcript
+        else interimChunk += transcript
+      }
+      if (finalChunk) {
+        dictationBaseRef.current = `${dictationBaseRef.current ? dictationBaseRef.current + ' ' : ''}${finalChunk.trim()}`
+      }
+      setNote(`${dictationBaseRef.current}${interimChunk ? ' ' + interimChunk : ''}`.trim())
+    }
+    recognition.onerror = () => {
+      setRecording(false)
+      showToast('❌ Não foi possível captar o áudio', 'error')
+    }
+    recognition.onend = () => {
+      setRecording(false)
+    }
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setRecording(true)
+  }
 
   function handleSave() {
     if (!client.trim()) {
@@ -100,13 +148,29 @@ export function ScheduleModal({ dateStr, onClose, onSave }: ScheduleModalProps) 
             onChange={(e) => setTime(e.target.value)}
             className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary"
           />
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Observação (opcional)"
-            rows={2}
-            className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-base text-foreground outline-none focus:border-primary"
-          />
+          <div className={`relative ${recording ? 'mb-4' : ''}`}>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Observação (opcional)"
+              rows={2}
+              className={`w-full resize-none rounded-lg border bg-background px-3 py-2.5 pr-12 text-base text-foreground outline-none focus:border-primary ${
+                recording ? 'border-danger' : 'border-border'
+              }`}
+            />
+            <button
+              type="button"
+              onClick={toggleDictation}
+              aria-label={recording ? 'Parar ditado por voz' : 'Falar a observação em vez de digitar'}
+              title={recording ? 'Parar ditado por voz' : 'Falar a observação em vez de digitar'}
+              className={`absolute bottom-2 right-2 flex size-8 items-center justify-center rounded-full transition ${
+                recording ? 'animate-pulse bg-danger text-white' : 'bg-primary text-primary-foreground hover:bg-primary-dark'
+              }`}
+            >
+              <Mic className="size-3.5" />
+            </button>
+            {recording && <span className="absolute -bottom-5 right-1 text-xs font-semibold text-danger">Ouvindo...</span>}
+          </div>
         </div>
         <div className="flex gap-2 border-t border-border p-3">
           <button onClick={onClose} className="flex-1 rounded-lg border border-border bg-background py-2.5 font-semibold text-foreground">

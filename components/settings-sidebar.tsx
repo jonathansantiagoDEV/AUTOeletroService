@@ -199,103 +199,112 @@ export function SettingsSidebar({
           )}
 
           {/* Preferências */}
-          <Card>
-            <IconRow
-              icon={dark ? Moon : Sun}
-              onClick={onToggleDark}
-              ariaLabel={dark ? 'Tema escuro ativo — tocar para mudar para claro' : 'Tema claro ativo — tocar para mudar para escuro'}
-            />
-            <Divider />
-            <Row
-              icon={Type}
-              label="Fonte"
-              onClick={() => setFontOpen((v) => !v)}
-              trailing={
-                <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
-                  {FONT_LABELS[fontScale]}
-                  <ChevronDown className={`size-3.5 transition-transform ${fontOpen ? 'rotate-180' : ''}`} />
-                </span>
-              }
-            />
-            {fontOpen && (
-              <div className="animate-slide-in border-t border-border px-3.5 py-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    aria-label="Diminuir fonte"
-                    disabled={fontIndex === 0}
-                    onClick={() => stepFont(-1)}
-                    className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition disabled:opacity-30"
-                  >
-                    <Minus className="size-3.5" />
-                  </button>
-                  <span className="text-xs font-bold text-muted-foreground">A</span>
-                  <input
-                    type="range"
-                    min={0}
-                    max={FONT_ORDER.length - 1}
-                    step={1}
-                    value={fontIndex}
-                    onChange={(e) => onChangeFontScale(FONT_ORDER[Number(e.target.value)])}
-                    className="h-1.5 flex-1 accent-primary"
-                    aria-label="Tamanho da fonte"
-                  />
-                  <span className="text-lg font-bold text-foreground">A</span>
-                  <button
-                    aria-label="Aumentar fonte"
-                    disabled={fontIndex === FONT_ORDER.length - 1}
-                    onClick={() => stepFont(1)}
-                    className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition disabled:opacity-30"
-                  >
-                    <Plus className="size-3.5" />
-                  </button>
+          <div>
+            <p className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-primary">Preferências</p>
+            <Card>
+              <IconRow
+                icon={dark ? Moon : Sun}
+                onClick={onToggleDark}
+                ariaLabel={dark ? 'Tema escuro ativo — tocar para mudar para claro' : 'Tema claro ativo — tocar para mudar para escuro'}
+              />
+              <Divider />
+              <Row
+                icon={Type}
+                label="Fonte"
+                onClick={() => setFontOpen((v) => !v)}
+                trailing={
+                  <span className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
+                    {FONT_LABELS[fontScale]}
+                    <ChevronDown className={`size-3.5 transition-transform ${fontOpen ? 'rotate-180' : ''}`} />
+                  </span>
+                }
+              />
+              {fontOpen && (
+                <div className="animate-slide-in border-t border-border px-3.5 py-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      aria-label="Diminuir fonte"
+                      disabled={fontIndex === 0}
+                      onClick={() => stepFont(-1)}
+                      className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition disabled:opacity-30"
+                    >
+                      <Minus className="size-3.5" />
+                    </button>
+                    <span className="text-xs font-bold text-muted-foreground">A</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={FONT_ORDER.length - 1}
+                      step={1}
+                      value={fontIndex}
+                      onChange={(e) => onChangeFontScale(FONT_ORDER[Number(e.target.value)])}
+                      className="h-1.5 flex-1 accent-primary"
+                      aria-label="Tamanho da fonte"
+                    />
+                    <span className="text-lg font-bold text-foreground">A</span>
+                    <button
+                      aria-label="Aumentar fonte"
+                      disabled={fontIndex === FONT_ORDER.length - 1}
+                      onClick={() => stepFont(1)}
+                      className="flex size-7 items-center justify-center rounded-full border border-border text-foreground transition disabled:opacity-30"
+                    >
+                      <Plus className="size-3.5" />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </Card>
+              )}
+            </Card>
+          </div>
 
           {/* Dados */}
-          <Card>
-            <Row
-              icon={Database}
-              label={`Dados (${recordCount})`}
-              onClick={() => setDataOpen((v) => !v)}
-              trailing={<ChevronDown className={`size-4 text-muted-foreground transition-transform ${dataOpen ? 'rotate-180' : ''}`} />}
-            />
-            {dataOpen && (
-              <div className="animate-slide-in border-t border-border">
-                <Row icon={Download} label="Exportar backup (JSON)" onClick={onExport} trailing={<ChevronRight className="size-4 text-muted-foreground" />} />
-                <Divider />
-                <Row icon={FileBarChart} label="Exportar relatório (PDF)" onClick={onExportReport} trailing={<ChevronRight className="size-4 text-muted-foreground" />} />
-                <Divider />
-                <Row icon={Upload} label="Importar backup" onClick={() => fileRef.current?.click()} trailing={<ChevronRight className="size-4 text-muted-foreground" />} />
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="application/json,.json"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0]
-                    if (f) onImport(f)
-                    e.target.value = ''
-                  }}
-                />
-                <Divider />
-                <Row
-                  icon={Zap}
-                  label={optimizing ? 'Otimizando fotos...' : 'Otimizar fotos antigas'}
-                  onClick={onOptimizePhotos}
-                  trailing={!optimizing && <ChevronRight className="size-4 text-muted-foreground" />}
-                />
-                <Divider />
-                <Row icon={Trash2} label="Apagar tudo" onClick={onClearAll} danger />
-              </div>
-            )}
-          </Card>
+          <div>
+            <p className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-primary">Dados</p>
+            <Card>
+              <Row
+                icon={Database}
+                label={`Dados (${recordCount})`}
+                onClick={() => setDataOpen((v) => !v)}
+                trailing={<ChevronDown className={`size-4 text-muted-foreground transition-transform ${dataOpen ? 'rotate-180' : ''}`} />}
+              />
+              {dataOpen && (
+                <div className="animate-slide-in border-t border-border">
+                  <Row icon={Download} label="Exportar backup (JSON)" onClick={onExport} trailing={<ChevronRight className="size-4 text-muted-foreground" />} />
+                  <Divider />
+                  <Row icon={FileBarChart} label="Exportar relatório (PDF)" onClick={onExportReport} trailing={<ChevronRight className="size-4 text-muted-foreground" />} />
+                  <Divider />
+                  <Row icon={Upload} label="Importar backup" onClick={() => fileRef.current?.click()} trailing={<ChevronRight className="size-4 text-muted-foreground" />} />
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) onImport(f)
+                      e.target.value = ''
+                    }}
+                  />
+                  <Divider />
+                  <Row
+                    icon={Zap}
+                    label={optimizing ? 'Otimizando fotos...' : 'Otimizar fotos antigas'}
+                    onClick={onOptimizePhotos}
+                    trailing={!optimizing && <ChevronRight className="size-4 text-muted-foreground" />}
+                  />
+                  <Divider />
+                  <Row icon={Trash2} label="Apagar tudo" onClick={onClearAll} danger />
+                </div>
+              )}
+            </Card>
+          </div>
 
           {/* Conta */}
-          <Card>
-            <IconRow icon={LogOut} onClick={onLogout} danger ariaLabel="Sair da conta" />
-          </Card>
+          <div>
+            <p className="mb-1.5 px-1 text-xs font-bold uppercase tracking-wide text-primary">Conta</p>
+            <Card>
+              <IconRow icon={LogOut} onClick={onLogout} danger ariaLabel="Sair da conta" />
+            </Card>
+          </div>
         </div>
       </aside>
     </>
