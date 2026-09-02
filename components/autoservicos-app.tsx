@@ -652,16 +652,16 @@ export function AutoservicosApp() {
 
       {/* Mini-dashboard financeiro do mês */}
       <div className="border-b border-border bg-card px-4 py-3">
-        <div className="flex divide-x divide-border text-center">
-          <div className="flex-1 px-2">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-background px-2 py-3 text-center">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Faturado no mês</p>
-            <p className="text-base font-bold text-success">
+            <p className="mt-0.5 text-lg font-bold text-success">
               {monthTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
           </div>
-          <div className="flex-1 px-2">
+          <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-background px-2 py-3 text-center">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Serviços no mês</p>
-            <p className="text-base font-bold text-foreground">{monthCount}</p>
+            <p className="mt-0.5 text-lg font-bold text-foreground">{monthCount}</p>
           </div>
         </div>
         <div className="mt-2 flex items-center justify-center gap-2 text-xs font-bold">

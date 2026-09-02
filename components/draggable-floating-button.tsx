@@ -39,10 +39,13 @@ export default function DraggableFloatingButton({ children, initial = { x: 20, y
     onTransitionEnd={() => setReturning(false)}
     onPointerDown={(e) => {
       moved.current = false
-      if (returnTimer.current) clearTimeout(returnTimer.current)
-      setReturning(false)
       start.current = { x: e.clientX - pos.x, y: e.clientY - pos.y }
       timer.current = setTimeout(() => {
+        // Só cancela o retorno automático quando um arraste de verdade começa
+        // (long-press de 1s). Um toque rápido no botão (ex.: abrir a câmera)
+        // não deve mexer no agendamento de retorno à posição inicial.
+        if (returnTimer.current) clearTimeout(returnTimer.current)
+        setReturning(false)
         setDrag(true)
         navigator.vibrate?.(25)
         ;(e.target as HTMLElement).setPointerCapture?.(e.pointerId)
