@@ -737,6 +737,7 @@ export function AutoservicosApp() {
       <DraggableFloatingButton
         initial={{ x: window.innerWidth - 75, y: window.innerHeight - 250 }}
         onClick={() => cameraInputRef.current?.click()}
+        paused={editorOpen}
         className="flex size-14 items-center justify-center rounded-full shadow-lg bg-card text-primary ring-1 ring-primary/30"
       >
         <Camera className="size-6" />
@@ -749,6 +750,7 @@ export function AutoservicosApp() {
           setInitialPhotos([])
           setEditorOpen(true)
         }}
+        paused={editorOpen}
         className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg"
       >
         <Plus className="size-7" />

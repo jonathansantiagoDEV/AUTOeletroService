@@ -7,9 +7,11 @@ interface Props {
   initial?: { x: number; y: number }
   onClick?: () => void
   className?: string
+  /** Enquanto true (ex.: um modal aberto), pausa a contagem dos 5s de retorno. */
+  paused?: boolean
 }
 
-export default function DraggableFloatingButton({ children, initial = { x: 20, y: 0 }, onClick, className = '' }: Props) {
+export default function DraggableFloatingButton({ children, initial = { x: 20, y: 0 }, onClick, className = '', paused = false }: Props) {
   const [pos, setPos] = useState(initial)
   const [drag, setDrag] = useState(false)
   const [returning, setReturning] = useState(false)
@@ -17,6 +19,8 @@ export default function DraggableFloatingButton({ children, initial = { x: 20, y
   const timer = useRef<NodeJS.Timeout | null>(null)
   const returnTimer = useRef<NodeJS.Timeout | null>(null)
   const moved = useRef(false)
+  // true quando o botão está fora do lugar original e ainda "deve" um retorno
+  const awaitingReturn = useRef(false)
 
   useEffect(() => {
     return () => {
@@ -25,13 +29,34 @@ export default function DraggableFloatingButton({ children, initial = { x: 20, y
     }
   }, [])
 
-  const scheduleReturn = () => {
-    if (returnTimer.current) clearTimeout(returnTimer.current)
-    returnTimer.current = setTimeout(() => {
-      setReturning(true)
-      setPos(initial)
-    }, 5000)
+  const doReturn = () => {
+    awaitingReturn.current = false
+    returnTimer.current = null
+    setReturning(true)
+    setPos(initial)
   }
+
+  const scheduleReturn = () => {
+    awaitingReturn.current = true
+    if (returnTimer.current) clearTimeout(returnTimer.current)
+    if (paused) return // não conta enquanto o modal estiver aberto
+    returnTimer.current = setTimeout(doReturn, 5000)
+  }
+
+  // Quando "paused" muda: se acabou de pausar (modal abriu), congela a
+  // contagem. Se acabou de despausar (modal fechou) e o botão ainda está
+  // fora do lugar, começa a contar os 5s a partir de agora.
+  useEffect(() => {
+    if (paused) {
+      if (returnTimer.current) {
+        clearTimeout(returnTimer.current)
+        returnTimer.current = null
+      }
+    } else if (awaitingReturn.current && !returnTimer.current) {
+      returnTimer.current = setTimeout(doReturn, 5000)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paused, initial.x, initial.y])
 
   return <button
     className={`fixed z-50 touch-none ${drag ? 'scale-110 cursor-grabbing' : returning ? 'transition-all duration-500' : ''} ${className}`}
