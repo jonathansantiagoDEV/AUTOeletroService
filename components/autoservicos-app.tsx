@@ -635,18 +635,39 @@ export function AutoservicosApp() {
         )}
       </main>
 
-      {/* Botão de câmera */}
-      <button
-        onClick={() => cameraInputRef.current?.click()}
-        aria-label="Registrar com a câmera"
-        className={`absolute bottom-24 right-5 flex size-14 items-center justify-center rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 transition hover:scale-105 active:scale-95 ${
-          dark 
-            ? 'bg-card text-white ring-white/30' 
-            : 'bg-card text-primary ring-primary/30'
-        }`}
-      >
-        <Camera className="size-6" />
-      </button>
+      {/* Botões flutuantes: câmera + novo registro, centralizados verticalmente
+          na tela (em vez de grudados no rodapé) para não cobrir as fotos dos
+          últimos registros da lista. */}
+      <div className="absolute right-5 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-4">
+        <button
+          onClick={() => cameraInputRef.current?.click()}
+          aria-label="Registrar com a câmera"
+          className={`flex size-14 items-center justify-center rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.25)] ring-1 transition hover:scale-105 active:scale-95 ${
+            dark 
+              ? 'bg-card text-white ring-white/30' 
+              : 'bg-card text-primary ring-primary/30'
+          }`}
+        >
+          <Camera className="size-6" />
+        </button>
+
+        {/* Botão flutuante */}
+        <div className="relative flex size-14 items-center justify-center">
+          <span className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-primary/60" />
+          <span className="pointer-events-none absolute inset-0 rounded-full bg-primary/20" />
+          <button
+            onClick={() => {
+              setEditing(null)
+              setInitialPhotos([])
+              setEditorOpen(true)
+            }}
+            aria-label="Novo registro"
+            className="relative flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_6px_20px_rgba(139,26,26,0.5)] transition hover:scale-105 hover:bg-primary-dark active:scale-95"
+          >
+            <Plus className="size-7" />
+          </button>
+        </div>
+      </div>
       <input
         ref={cameraInputRef}
         type="file"
@@ -668,20 +689,6 @@ export function AutoservicosApp() {
           e.target.value = ''
         }}
       />
-
-      {/* Botão flutuante */}
-      <button
-        onClick={() => {
-          setEditing(null)
-          setInitialPhotos([])
-          setEditorOpen(true)
-        }}
-        aria-label="Novo registro"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 20px)' }}
-        className="absolute right-5 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[0_0_0_8px_rgba(139,26,26,0.15),0_6px_20px_rgba(139,26,26,0.5)] transition hover:scale-105 hover:bg-primary-dark active:scale-95"
-      >
-        <Plus className="size-7" />
-      </button>
 
       {/* Modais */}
       <RecordEditorModal

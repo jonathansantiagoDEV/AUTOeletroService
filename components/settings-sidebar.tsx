@@ -168,8 +168,8 @@ export function SettingsSidebar({
         // fixo em px/16px para garantir que o usuário sempre consiga sair
         // das Configurações, não importa o que aconteça no resto do app.
         style={{ width: 'min(300px, 85vw)', fontSize: '16px' }}
-        className={`fixed right-0 top-0 z-[6000] flex h-full flex-col bg-card shadow-2xl transition-transform duration-300 ${
-          open ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed left-0 top-0 z-[6000] flex h-full flex-col bg-card shadow-2xl transition-transform duration-300 ${
+          open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="flex items-center justify-between bg-primary px-4 py-4 text-primary-foreground">
