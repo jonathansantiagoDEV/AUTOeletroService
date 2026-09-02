@@ -18,7 +18,7 @@ interface RecordCardProps {
   onEdit: (record: ServiceRecord) => void
   onDelete: (id: string) => void
   onShare: (record: ServiceRecord) => void
-  onZoomPhoto: (photo: string) => void
+  onZoomPhoto: (photos: string[], index: number) => void
   alerting?: boolean
 }
 
@@ -64,34 +64,36 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
           <Bell className="size-3.5 animate-pulse-dot" /> Chegou a hora do agendamento!
         </div>
       )}
-      <div className="mb-1.5 flex items-start justify-between gap-3">
-        <div className="flex flex-1 flex-wrap items-center gap-1.5 break-words text-base font-bold text-foreground">
-          <UserCircle className="inline size-4 text-primary" />
-          {record.clientName || 'Cliente'}
-          <span
-            className="flex size-5 shrink-0 items-center justify-center rounded-full text-white"
-            style={{ backgroundColor: STATUS_COLORS[record.status ?? 'em_andamento'] }}
-            title={STATUS_LABELS_SHORT[record.status ?? 'em_andamento']}
-          >
-            {(() => {
-              const Icon = STATUS_ICONS[record.status ?? 'em_andamento']
-              return <Icon className="size-3" />
-            })()}
-          </span>
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5 break-words text-base font-bold text-foreground">
+            <UserCircle className="inline size-4 text-primary" />
+            {record.clientName || 'Cliente'}
+            <span
+              className="flex size-5 shrink-0 items-center justify-center rounded-full text-white"
+              style={{ backgroundColor: STATUS_COLORS[record.status ?? 'em_andamento'] }}
+              title={STATUS_LABELS_SHORT[record.status ?? 'em_andamento']}
+            >
+              {(() => {
+                const Icon = STATUS_ICONS[record.status ?? 'em_andamento']
+                return <Icon className="size-3" />
+              })()}
+            </span>
+          </div>
           {record.category && (
-            <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[10px] font-bold text-primary">
+            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary">
               {CATEGORY_LABELS[record.category]}
             </span>
           )}
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex shrink-0 gap-1.5">
           {record.clientPhone && (
             <>
               <a
                 href={`tel:${record.clientPhone.replace(/\D/g, '')}`}
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Ligar para o cliente"
-                className="flex items-center justify-center rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-primary"
+                className="flex items-center justify-center rounded-full bg-sky-500/15 p-2.5 text-sky-600 transition hover:bg-sky-500/25 dark:text-sky-400"
               >
                 <Phone className="size-5" />
               </a>
@@ -101,7 +103,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 aria-label="Chamar no WhatsApp"
-                className="flex items-center justify-center rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-[#25D366]"
+                className="flex items-center justify-center rounded-full bg-[#25D366]/15 p-2.5 text-[#25D366] transition hover:bg-[#25D366]/25"
               >
                 <MessageCircle className="size-5" />
               </a>
@@ -113,7 +115,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               e.stopPropagation()
               onEdit(record)
             }}
-            className="rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-primary"
+            className="rounded-full bg-amber-500/15 p-2.5 text-amber-600 transition hover:bg-amber-500/25 dark:text-amber-400"
           >
             <Pencil className="size-5" />
           </button>
@@ -123,7 +125,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               e.stopPropagation()
               onDelete(record.id)
             }}
-            className="rounded-full p-2.5 text-muted-foreground transition hover:bg-background hover:text-danger"
+            className="rounded-full bg-danger/15 p-2.5 text-danger transition hover:bg-danger/25"
           >
             <Trash2 className="size-5" />
           </button>
@@ -156,7 +158,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
       )}
 
       {record.noteText && (
-        <div className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background px-2.5 py-1.5">
+        <div className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-primary/5 px-3 py-2">
           <span style={styledText} className={usingDefaultColor ? 'text-foreground' : ''}>
             {record.noteText}
           </span>
@@ -182,7 +184,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
                   alt={`Foto ${i + 1}`}
                   onClick={(e) => {
                     e.stopPropagation()
-                    onZoomPhoto(photo)
+                    onZoomPhoto(record.photos, i)
                   }}
                   className="aspect-square w-full cursor-pointer rounded-xl border border-border object-cover shadow-sm transition hover:opacity-95"
                 />

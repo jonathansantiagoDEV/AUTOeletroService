@@ -68,7 +68,7 @@ export function AutoservicosApp() {
   const cameraInputRef = useRef<HTMLInputElement>(null)
   const [viewing, setViewing] = useState<ServiceRecord | null>(null)
   const [sharing, setSharing] = useState<ServiceRecord | null>(null)
-  const [zoomPhoto, setZoomPhoto] = useState<string | null>(null)
+  const [zoomPhoto, setZoomPhoto] = useState<{ photos: string[]; index: number } | null>(null)
   const [scheduleDate, setScheduleDate] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -249,10 +249,16 @@ export function AutoservicosApp() {
 
   // Escala de fonte
   useEffect(() => {
-    document.documentElement.style.fontSize = FONT_SCALE_VALUES[fontScale]
+    // Aplica só na variável --app-font-scale (afeta unicamente o tamanho
+    // do texto — ver globals.css). O font-size do <html> nunca é mais
+    // tocado aqui, então o layout (larguras, ícones, paddings) fica
+    // sempre estável, mesmo na fonte "Extra grande".
+    const raw = FONT_SCALE_VALUES[fontScale] ?? FONT_SCALE_VALUES.normal
+    const scale = Math.min(1.5, Math.max(1, parseFloat(raw) || 1))
+    document.documentElement.style.setProperty('--app-font-scale', String(scale))
     if (loaded) localStorage.setItem('autoservicos_scale', fontScale)
     return () => {
-      document.documentElement.style.fontSize = ''
+      document.documentElement.style.removeProperty('--app-font-scale')
     }
   }, [fontScale, loaded])
 
@@ -630,7 +636,7 @@ export function AutoservicosApp() {
                 }}
                 onDelete={handleDelete}
                 onShare={setSharing}
-                onZoomPhoto={setZoomPhoto}
+                onZoomPhoto={(photos, index) => setZoomPhoto({ photos, index })}
                 alerting={blinkingIds.has(record.id)}
               />
             ))}
@@ -707,7 +713,7 @@ export function AutoservicosApp() {
           setViewing(null)
         }}
         onShare={(r) => setSharing(r)}
-        onZoomPhoto={setZoomPhoto}
+        onZoomPhoto={(photos, index) => setZoomPhoto({ photos, index })}
         onShowHistory={(r) => setHistoryFor(r)}
       />
       <ClientHistoryModal
@@ -744,7 +750,11 @@ export function AutoservicosApp() {
       <SalesChartModal open={salesChartOpen} records={records} onClose={() => setSalesChartOpen(false)} />
       <ScheduleModal dateStr={scheduleDate} onClose={() => setScheduleDate(null)} onSave={handleScheduleSave} />
       <ShareModal record={sharing} onClose={() => setSharing(null)} />
-      <PhotoZoom photo={zoomPhoto} onClose={() => setZoomPhoto(null)} />
+      <PhotoZoom
+        photos={zoomPhoto?.photos ?? []}
+        initialIndex={zoomPhoto?.index ?? 0}
+        onClose={() => setZoomPhoto(null)}
+      />
       <SettingsSidebar
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}

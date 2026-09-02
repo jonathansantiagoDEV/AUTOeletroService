@@ -127,14 +127,14 @@ export const DEFAULT_TEXT_STYLE: TextStyle = {
 
 export type FontScale = 'normal' | 'medium' | 'large' | 'xlarge'
 
-// Valores conservadores: como o layout inteiro é construído com unidades
-// relativas (rem) do Tailwind, escalar o font-size do <html> aumenta também
-// larguras, paddings e alturas fixas do app — não só o texto. Valores altos
-// (ex.: 140%) faziam a interface "explodir" e cobrir os próprios controles
-// de navegação, prendendo o usuário na tela. Mantemos uma faixa segura.
+// Multiplicadores aplicados apenas à variável --app-font-scale (ver
+// globals.css), que por sua vez só afeta os tamanhos de texto (--text-*)
+// do Tailwind. Layout, ícones e espaçamentos usam rem "puro" e não são
+// afetados — por isso podemos usar valores mais generosos aqui sem
+// quebrar a tela.
 export const FONT_SCALE_VALUES: Record<FontScale, string> = {
-  normal: '100%',
-  medium: '106%',
-  large: '112%',
-  xlarge: '118%',
+  normal: '1',
+  medium: '1.12',
+  large: '1.25',
+  xlarge: '1.4',
 }

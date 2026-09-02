@@ -10,7 +10,7 @@ interface ViewRecordModalProps {
   onClose: () => void
   onEdit: (record: ServiceRecord) => void
   onShare: (record: ServiceRecord) => void
-  onZoomPhoto: (photo: string) => void
+  onZoomPhoto: (photos: string[], index: number) => void
   onShowHistory?: (record: ServiceRecord) => void
 }
 
@@ -101,7 +101,7 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto,
                   key={i}
                   src={p || '/placeholder.svg'}
                   alt={`Foto ${i + 1}`}
-                  onClick={() => onZoomPhoto(p)}
+                  onClick={() => onZoomPhoto(record.photos, i)}
                   className="aspect-square w-full cursor-pointer rounded-lg border border-border object-cover transition hover:border-primary"
                 />
               ))}

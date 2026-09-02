@@ -19,6 +19,24 @@
   --color-whatsapp: var(--whatsapp);
 
   --radius-app: 12px;
+
+  /* Reescreve a escala tipográfica do Tailwind para reagir só à variável
+     --app-font-scale (definida no body), e não ao font-size do <html>.
+     Assim, "Tamanho da fonte" nas Configurações aumenta apenas o texto —
+     larguras, paddings, ícones (w-, p-, size-, gap-, etc.) continuam em
+     rem "puro" e não se movem, porque eles não passam por --text-*. */
+  --text-xs: calc(0.75rem * var(--app-font-scale));
+  --text-xs--line-height: calc(1rem * var(--app-font-scale));
+  --text-sm: calc(0.875rem * var(--app-font-scale));
+  --text-sm--line-height: calc(1.25rem * var(--app-font-scale));
+  --text-base: calc(1rem * var(--app-font-scale));
+  --text-base--line-height: calc(1.5rem * var(--app-font-scale));
+  --text-lg: calc(1.125rem * var(--app-font-scale));
+  --text-lg--line-height: calc(1.75rem * var(--app-font-scale));
+  --text-xl: calc(1.25rem * var(--app-font-scale));
+  --text-xl--line-height: calc(1.75rem * var(--app-font-scale));
+  --text-2xl: calc(1.5rem * var(--app-font-scale));
+  --text-2xl--line-height: calc(2rem * var(--app-font-scale));
 }
 
 :root {
@@ -35,6 +53,10 @@
   --danger: #d32f2f;
   --whatsapp: #25d366;
   --shadow-app: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* 1 = 100% (tamanho normal). O JS só altera esta variável para aplicar
+     a preferência de tamanho de fonte do usuário — nunca mais o font-size
+     do <html>, que é quem definia as unidades rem de todo o layout. */
+  --app-font-scale: 1;
 }
 
 .dark {
@@ -51,6 +73,13 @@
   * {
     border-color: var(--border);
     -webkit-tap-highlight-color: transparent;
+  }
+  html {
+    /* Fixo para sempre: é a base de TODAS as unidades rem do layout
+       (larguras, paddings, ícones). Nunca deve ser alterado por JS —
+       foi escalar isto que causava o layout "explodindo" e travando
+       o usuário quando a fonte grande era selecionada. */
+    font-size: 16px;
   }
   html,
   body {
