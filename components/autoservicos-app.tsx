@@ -603,11 +603,11 @@ export function AutoservicosApp() {
         )}
 
         {/* Filtros de status e categoria */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+        <div className="flex items-center justify-center gap-2 overflow-x-auto pb-0.5">
           <button
             onClick={() => setStatusFilter('todos')}
             aria-label="Todos os status"
-            className={`flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold ${
+            className={`flex shrink-0 items-center justify-center rounded-full border px-4 py-2 text-sm font-semibold ${
               statusFilter === 'todos'
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border bg-background text-muted-foreground'
@@ -624,55 +624,55 @@ export function AutoservicosApp() {
                 onClick={() => setStatusFilter((v) => (v === key ? 'todos' : key))}
                 aria-label={STATUS_LABELS[key]}
                 title={STATUS_LABELS[key]}
-                className="flex size-8 shrink-0 items-center justify-center rounded-full border"
+                className="flex size-10 shrink-0 items-center justify-center rounded-full border"
                 style={
                   active
                     ? { backgroundColor: STATUS_COLORS[key], borderColor: STATUS_COLORS[key], color: '#fff' }
                     : { borderColor: 'var(--border)', color: 'var(--muted-foreground)', background: 'var(--background)' }
                 }
               >
-                <Icon className="size-4" />
+                <Icon className="size-[18px]" />
               </button>
             )
           })}
           <button
             onClick={() => setCategoryModalOpen(true)}
-            className={`flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold ${
               categoryFilter !== 'todas'
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border bg-background text-muted-foreground'
             }`}
           >
-            <LayoutGrid className="size-3.5" />
+            <LayoutGrid className="size-4" />
             {categoryFilter === 'todas' ? 'Categoria' : CATEGORY_LABELS[categoryFilter]}
-            <ChevronDown className="size-3.5" />
+            <ChevronDown className="size-4" />
           </button>
         </div>
       </div>
 
       {/* Mini-dashboard financeiro do mês */}
-      <div className="border-b border-border bg-card px-4 py-2">
+      <div className="border-b border-border bg-card px-4 py-3">
         <div className="flex divide-x divide-border text-center">
           <div className="flex-1 px-2">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Faturado no mês</p>
-            <p className="text-sm font-bold text-success">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Faturado no mês</p>
+            <p className="text-base font-bold text-success">
               {monthTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
             </p>
           </div>
           <div className="flex-1 px-2">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Serviços no mês</p>
-            <p className="text-sm font-bold text-foreground">{monthCount}</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Serviços no mês</p>
+            <p className="text-base font-bold text-foreground">{monthCount}</p>
           </div>
         </div>
-        <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px] font-bold">
-          <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: `${STATUS_COLORS.em_andamento}22`, color: STATUS_COLORS.em_andamento }}>
-            <Clock className="size-3" /> {monthByStatus.em_andamento}
+        <div className="mt-2 flex items-center justify-center gap-2 text-xs font-bold">
+          <span className="flex items-center gap-1 rounded-full px-2.5 py-1" style={{ backgroundColor: `${STATUS_COLORS.em_andamento}22`, color: STATUS_COLORS.em_andamento }}>
+            <Clock className="size-3.5" /> {monthByStatus.em_andamento}
           </span>
-          <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: `${STATUS_COLORS.concluido}22`, color: STATUS_COLORS.concluido }}>
-            <CheckCircle2 className="size-3" /> {monthByStatus.concluido}
+          <span className="flex items-center gap-1 rounded-full px-2.5 py-1" style={{ backgroundColor: `${STATUS_COLORS.concluido}22`, color: STATUS_COLORS.concluido }}>
+            <CheckCircle2 className="size-3.5" /> {monthByStatus.concluido}
           </span>
-          <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: `${STATUS_COLORS.aguardando_peca}22`, color: STATUS_COLORS.aguardando_peca }}>
-            <PackageSearch className="size-3" /> {monthByStatus.aguardando_peca}
+          <span className="flex items-center gap-1 rounded-full px-2.5 py-1" style={{ backgroundColor: `${STATUS_COLORS.aguardando_peca}22`, color: STATUS_COLORS.aguardando_peca }}>
+            <PackageSearch className="size-3.5" /> {monthByStatus.aguardando_peca}
           </span>
         </div>
       </div>
