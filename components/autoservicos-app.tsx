@@ -3,9 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { Camera, CalendarDays, CalendarClock, ChevronDown, FileText, LayoutGrid, Plus, Search, Settings, Bell, BarChart3 } from 'lucide-react'
+import { Camera, CalendarDays, CalendarClock, CheckCircle2, ChevronDown, Clock, FileText, LayoutGrid, PackageSearch, Plus, Search, Settings, Bell, BarChart3 } from 'lucide-react'
+
+const STATUS_ICONS = {
+  em_andamento: Clock,
+  concluido: CheckCircle2,
+  aguardando_peca: PackageSearch,
+} as const
 import type { FontScale, ServiceCategory, ServiceRecord, ServiceStatus } from '@/lib/types'
-import { CATEGORY_LABELS, FONT_SCALE_VALUES, STATUS_LABELS, isPendingSchedule } from '@/lib/types'
+import { CATEGORY_LABELS, FONT_SCALE_VALUES, STATUS_LABELS, STATUS_LABELS_SHORT, STATUS_COLORS, isPendingSchedule } from '@/lib/types'
 import { parseCurrency } from '@/lib/format'
 import { createClient } from '@/lib/supabase/client'
 import { normalizeImageOrientation } from '@/lib/image'
@@ -497,7 +503,8 @@ export function AutoservicosApp() {
         <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           <button
             onClick={() => setStatusFilter('todos')}
-            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
+            aria-label="Todos os status"
+            className={`flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 text-xs font-semibold ${
               statusFilter === 'todos'
                 ? 'border-primary bg-primary text-primary-foreground'
                 : 'border-border bg-background text-muted-foreground'
@@ -505,19 +512,26 @@ export function AutoservicosApp() {
           >
             Todos
           </button>
-          {(Object.keys(STATUS_LABELS) as ServiceStatus[]).map((key) => (
-            <button
-              key={key}
-              onClick={() => setStatusFilter((v) => (v === key ? 'todos' : key))}
-              className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                statusFilter === key
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-background text-muted-foreground'
-              }`}
-            >
-              {STATUS_LABELS[key]}
-            </button>
-          ))}
+          {(Object.keys(STATUS_LABELS) as ServiceStatus[]).map((key) => {
+            const Icon = STATUS_ICONS[key]
+            const active = statusFilter === key
+            return (
+              <button
+                key={key}
+                onClick={() => setStatusFilter((v) => (v === key ? 'todos' : key))}
+                aria-label={STATUS_LABELS[key]}
+                title={STATUS_LABELS[key]}
+                className="flex size-8 shrink-0 items-center justify-center rounded-full border"
+                style={
+                  active
+                    ? { backgroundColor: STATUS_COLORS[key], borderColor: STATUS_COLORS[key], color: '#fff' }
+                    : { borderColor: 'var(--border)', color: 'var(--muted-foreground)', background: 'var(--background)' }
+                }
+              >
+                <Icon className="size-4" />
+              </button>
+            )
+          })}
           <button
             onClick={() => setCategoryModalOpen(true)}
             className={`flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${
@@ -547,10 +561,16 @@ export function AutoservicosApp() {
             <p className="text-sm font-bold text-foreground">{monthCount}</p>
           </div>
         </div>
-        <div className="mt-1.5 flex items-center justify-center gap-3 text-[11px] font-semibold text-muted-foreground">
-          <span>🟠 {monthByStatus.em_andamento} em andamento</span>
-          <span>🟢 {monthByStatus.concluido} concluídos</span>
-          <span>🔴 {monthByStatus.aguardando_peca} aguard. peça</span>
+        <div className="mt-1.5 flex items-center justify-center gap-2 text-[11px] font-bold">
+          <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: `${STATUS_COLORS.em_andamento}22`, color: STATUS_COLORS.em_andamento }}>
+            <Clock className="size-3" /> {monthByStatus.em_andamento}
+          </span>
+          <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: `${STATUS_COLORS.concluido}22`, color: STATUS_COLORS.concluido }}>
+            <CheckCircle2 className="size-3" /> {monthByStatus.concluido}
+          </span>
+          <span className="flex items-center gap-1 rounded-full px-2 py-0.5" style={{ backgroundColor: `${STATUS_COLORS.aguardando_peca}22`, color: STATUS_COLORS.aguardando_peca }}>
+            <PackageSearch className="size-3" /> {monthByStatus.aguardando_peca}
+          </span>
         </div>
       </div>
 

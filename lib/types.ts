@@ -15,6 +15,13 @@ export const STATUS_LABELS: Record<ServiceStatus, string> = {
   aguardando_peca: 'Aguardando peça',
 }
 
+// Rótulos curtos, usados nos filtros e badges compactos (economiza espaço na tela)
+export const STATUS_LABELS_SHORT: Record<ServiceStatus, string> = {
+  em_andamento: 'Andamento',
+  concluido: 'Concluído',
+  aguardando_peca: 'Peça',
+}
+
 export const STATUS_COLORS: Record<ServiceStatus, string> = {
   em_andamento: '#F57C00',
   concluido: '#2E7D32',

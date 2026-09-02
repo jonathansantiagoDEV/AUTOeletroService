@@ -1,10 +1,16 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { Bell, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, Pencil, Phone, Share2, ShieldAlert, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
+import { Bell, CheckCircle2, Clock, DollarSign, Hash, Image as ImageIcon, MessageCircle, PackageSearch, Pencil, Phone, Share2, ShieldAlert, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
 import type { ServiceRecord } from '@/lib/types'
-import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS, isWarrantyExpired, isWarrantyExpiringSoon, warrantyDaysRemaining } from '@/lib/types'
+import { CATEGORY_LABELS, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS_SHORT, isWarrantyExpired, isWarrantyExpiringSoon, warrantyDaysRemaining } from '@/lib/types'
 import { timeAgo } from '@/lib/format'
+
+const STATUS_ICONS = {
+  em_andamento: Clock,
+  concluido: CheckCircle2,
+  aguardando_peca: PackageSearch,
+} as const
 
 interface RecordCardProps {
   record: ServiceRecord
@@ -63,10 +69,14 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
           <UserCircle className="inline size-4 text-primary" />
           {record.clientName || 'Cliente'}
           <span
-            className="rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
+            className="flex size-5 shrink-0 items-center justify-center rounded-full text-white"
             style={{ backgroundColor: STATUS_COLORS[record.status ?? 'em_andamento'] }}
+            title={STATUS_LABELS_SHORT[record.status ?? 'em_andamento']}
           >
-            {STATUS_LABELS[record.status ?? 'em_andamento']}
+            {(() => {
+              const Icon = STATUS_ICONS[record.status ?? 'em_andamento']
+              return <Icon className="size-3" />
+            })()}
           </span>
           {record.category && (
             <span className="rounded-full border border-primary/40 px-2 py-0.5 text-[10px] font-bold text-primary">
