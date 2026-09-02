@@ -82,7 +82,7 @@ export function SalesChartModal({ open, records, onClose }: SalesChartModalProps
         <div className="flex items-center justify-between bg-primary px-4 py-4 text-primary-foreground">
           <div className="flex items-center gap-2">
             <BarChart3 className="size-5" />
-            <h2 className="text-base font-bold">Vendas e faturamento • {stats.monthLabel}</h2>
+            <h2 className="text-base font-bold">Dashboard • {stats.monthLabel}</h2>
           </div>
           <button aria-label="Fechar" onClick={onClose} className="rounded-full p-1 hover:bg-white/20">
             <X className="size-5" />

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@supabase/supabase-js'
-import { Camera, CalendarDays, CalendarClock, CheckCircle2, ChevronDown, Clock, FileText, LayoutGrid, PackageSearch, Plus, Search, Settings, Bell, BarChart3 } from 'lucide-react'
+import { Camera, CheckCircle2, ChevronDown, Clock, FileText, LayoutGrid, Menu, PackageSearch, Plus, Search, Bell, CircleHelp } from 'lucide-react'
 
 const STATUS_ICONS = {
   em_andamento: Clock,
@@ -36,9 +36,11 @@ import { ClientHistoryModal } from './client-history-modal'
 import { ShareModal } from './share-modal'
 import { PhotoZoom } from './photo-zoom'
 import { SettingsSidebar } from './settings-sidebar'
+import { MainMenu } from './main-menu'
 import { CategoryFilterModal } from './category-filter-modal'
 import { SalesChartModal } from './sales-chart-modal'
 import { OnboardingModal } from './onboarding-modal'
+import { HelpModal } from './help-modal'
 import { ConfirmModal } from './confirm-modal'
 import { useToast } from './toast'
 
@@ -71,7 +73,9 @@ export function AutoservicosApp() {
   const [zoomPhoto, setZoomPhoto] = useState<{ photos: string[]; index: number } | null>(null)
   const [scheduleDate, setScheduleDate] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [onboardingOpen, setOnboardingOpen] = useState(false)
   const [optimizingPhotos, setOptimizingPhotos] = useState(false)
 
@@ -441,6 +445,18 @@ export function AutoservicosApp() {
   const todayStr = now.toISOString().slice(0, 10)
   const todaySchedules = records.filter((r) => r.schedule === todayStr)
 
+  // Nome exibido no cabeçalho ("Olá, Valter!"). O app só coleta e-mail no
+  // cadastro (sem campo de nome), então usamos a parte antes do "@" como
+  // um nome amigável, com a primeira letra maiúscula.
+  const greetingName = (() => {
+    const localPart = user?.email?.split('@')[0]
+    if (!localPart) return null
+    const cleaned = localPart.replace(/[._-]+/g, ' ').trim()
+    const firstWord = cleaned.split(' ')[0]
+    if (!firstWord) return null
+    return firstWord.charAt(0).toUpperCase() + firstWord.slice(1).toLowerCase()
+  })()
+
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-[480px] flex-col overflow-hidden bg-background shadow-2xl sm:my-4 sm:h-[calc(100dvh-2rem)] sm:rounded-3xl sm:border sm:border-border">
       {/* Cabeçalho */}
@@ -449,47 +465,30 @@ export function AutoservicosApp() {
           <Logo className="size-full" />
         </div>
         <div className="flex-1">
-          <h1 className="text-lg font-extrabold leading-tight tracking-tight">Autoserviços</h1>
+          <h1 className="text-lg font-extrabold leading-tight tracking-tight">
+            {greetingName ? `Olá, ${greetingName}!` : 'Autoserviços'}
+          </h1>
           <p className="text-[11px] text-white/70">{records.length} registros salvos</p>
         </div>
         <button
-          onClick={() => setAgendaOpen(true)}
-          aria-label="Agendamentos"
+          onClick={() => setHelpOpen(true)}
+          aria-label="Ajuda: como funciona o app"
+          title="Como funciona o app"
+          className="rounded-full p-2 transition hover:bg-white/15"
+        >
+          <CircleHelp className="size-5" />
+        </button>
+        <button
+          onClick={() => setMenuOpen(true)}
+          aria-label="Abrir menu"
           className="relative rounded-full p-2 transition hover:bg-white/15"
         >
-          <CalendarClock className="size-5" />
-          {pendingRecords.length > 0 && (
+          <Menu className="size-5" />
+          {(pendingRecords.length > 0 || scheduledCount > 0) && (
             <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-primary">
-              {pendingRecords.length}
+              {pendingRecords.length + scheduledCount}
             </span>
           )}
-        </button>
-        <button
-          onClick={() => setSalesChartOpen(true)}
-          aria-label="Vendas e faturamento do mês"
-          title="Vendas e faturamento do mês"
-          className="rounded-full p-2 transition hover:bg-white/15"
-        >
-          <BarChart3 className="size-5" />
-        </button>
-        <button
-          onClick={() => setCalendarOpen((v) => !v)}
-          aria-label="Calendário"
-          className={`relative rounded-full p-2 transition ${calendarOpen ? 'bg-white/25' : 'hover:bg-white/15'}`}
-        >
-          <CalendarDays className="size-5" />
-          {scheduledCount > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-white text-[9px] font-bold text-primary">
-              {scheduledCount}
-            </span>
-          )}
-        </button>
-        <button
-          onClick={() => setSettingsOpen(true)}
-          aria-label="Configurações"
-          className="rounded-full p-2 transition hover:bg-white/15"
-        >
-          <Settings className="size-5" />
         </button>
       </header>
 
@@ -755,6 +754,17 @@ export function AutoservicosApp() {
         initialIndex={zoomPhoto?.index ?? 0}
         onClose={() => setZoomPhoto(null)}
       />
+      <MainMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        calendarActive={calendarOpen}
+        scheduledCount={scheduledCount}
+        pendingCount={pendingRecords.length}
+        onToggleCalendar={() => setCalendarOpen((v) => !v)}
+        onOpenAgenda={() => setAgendaOpen(true)}
+        onOpenDashboard={() => setSalesChartOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
       <SettingsSidebar
         open={settingsOpen}
         onClose={() => setSettingsOpen(false)}
@@ -769,11 +779,11 @@ export function AutoservicosApp() {
         onClearAll={handleClearAll}
         userEmail={user?.email ?? null}
         onLogout={handleLogout}
-        onShowTutorial={() => setOnboardingOpen(true)}
         onOptimizePhotos={handleOptimizePhotos}
         optimizing={optimizingPhotos}
       />
       <OnboardingModal open={onboardingOpen} onClose={closeOnboarding} />
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
       <ConfirmModal
         open={!!deleteTarget}
         title="Excluir Registro"
