@@ -1,6 +1,10 @@
 import { jsPDF } from 'jspdf'
 import type { ServiceRecord } from './types'
 import { CATEGORY_LABELS, STATUS_LABELS } from './types'
+import { VALDECI_LOGO_BASE64 } from './logo-base64'
+
+// Telefone exibido junto ao logo nos documentos PDF
+const WORKSHOP_PHONE = '(83) 98871-5799'
 
 // Cores baseadas no modelo (azul e laranja)
 const PRIMARY: [number, number, number] = [0, 82, 155] // Azul #00529B
@@ -31,11 +35,10 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   doc.setFillColor(...ACCENT)
   doc.triangle(pageWidth - 65, 0, pageWidth, 0, pageWidth, 38, 'F')
   
-  // Nome da oficina (como "AUTOSERVIÇOS" no canto superior direito)
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(14)
-  doc.setFont('helvetica', 'bold')
-  doc.text('AUTOSERVIÇOS', pageWidth - margin, 16, { align: 'right' })
+  // Logo da oficina no canto superior direito (substitui o texto "AUTOSERVIÇOS")
+  const headerLogoW = 22
+  const headerLogoH = 20
+  doc.addImage(VALDECI_LOGO_BASE64, 'PNG', pageWidth - 2 - headerLogoW, 2, headerLogoW, headerLogoH)
   
   // Título: "ORDEM DE SERVIÇO" (como "ORÇAMENTO #01234")
   doc.setTextColor(...PRIMARY)
@@ -62,11 +65,17 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   const col2X = margin + contentWidth / 2 + 6
   
   // --- Coluna 1: Oficina ---
+  // Logo (substitui o texto "AUTOSERVIÇOS") + telefone logo abaixo
+  const col1LogoW = 34
+  const col1LogoH = 31
+  doc.addImage(VALDECI_LOGO_BASE64, 'PNG', col1X, y - 5, col1LogoW, col1LogoH)
+  y += col1LogoH - 5
+
   doc.setTextColor(...PRIMARY)
-  doc.setFontSize(10.5)
+  doc.setFontSize(9)
   doc.setFont('helvetica', 'bold')
-  doc.text('AUTOSERVIÇOS', col1X, y)
-  
+  doc.text(WORKSHOP_PHONE, col1X, y)
+
   // Linha separadora
   doc.setDrawColor(...PRIMARY)
   doc.setLineWidth(0.5)
@@ -90,6 +99,8 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
     y += 5.5
   })
   
+  const col1EndY = y
+
   // Reset Y para a coluna 2
   y = 50
   
@@ -118,7 +129,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
     y += 5.5
   })
 
-  y = Math.max(65, y + 6)
+  y = Math.max(65, y + 6, col1EndY + 6)
 
   // ============================================================
   // 3. TABELA: SERVIÇO | DESCRIÇÃO | VALOR
@@ -300,7 +311,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   doc.setFontSize(8)
   doc.setTextColor(...TEXT_MUTED)
   doc.setFont('helvetica', 'normal')
-  doc.text('Documento gerado pelo Autoserviços', pageWidth / 2, y, { align: 'center' })
+  doc.text('Documento gerado por Valdeci Eletricista', pageWidth / 2, y, { align: 'center' })
   
   // Data de impressão
   const now = new Date()
@@ -419,7 +430,7 @@ export function generateBulkReportBlob(records: ServiceRecord[]): Blob {
   y += 5
   doc.setFontSize(8)
   doc.setTextColor(...TEXT_MUTED)
-  doc.text('Documento gerado pelo Autoserviços', pageWidth / 2, y, { align: 'center' })
+  doc.text('Documento gerado por Valdeci Eletricista', pageWidth / 2, y, { align: 'center' })
 
   return doc.output('blob')
 }
