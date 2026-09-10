@@ -37,6 +37,93 @@ async function urlToBase64(url:string):Promise<string>{
 }
 
 
+// Relatório resumido mantido para compatibilidade com o aplicativo
+export function generateBulkReportBlob(records: ServiceRecord[]): Blob {
+
+  const doc = new jsPDF('p', 'mm', 'a4')
+
+  const pageWidth = 210
+  const margin = 14
+  const contentWidth = pageWidth - margin * 2
+
+  let y = 20
+
+  doc.setFillColor(...PRIMARY)
+  doc.rect(0, 0, pageWidth, 5, 'F')
+
+  doc.setTextColor(...PRIMARY)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.text('RELATÓRIO DE SERVIÇOS', margin, y)
+
+  y += 8
+
+  doc.setFontSize(9)
+  doc.setTextColor(...TEXT_MUTED)
+  doc.text(
+    `Gerado em ${new Date().toLocaleDateString('pt-BR')} - ${records.length} registro(s)`,
+    margin,
+    y
+  )
+
+  y += 12
+
+  doc.setFillColor(...PRIMARY)
+  doc.rect(margin, y, contentWidth, 8, 'F')
+
+  doc.setTextColor(255,255,255)
+  doc.setFontSize(8)
+
+  doc.text('CLIENTE', margin + 3, y + 5)
+  doc.text('VALOR', 160, y + 5)
+
+  y += 12
+
+  doc.setTextColor(...TEXT_DARK)
+
+  records.forEach((record, index) => {
+
+    if (y > 275) {
+      doc.addPage()
+      y = 20
+    }
+
+    if(index % 2 === 0){
+      doc.setFillColor(...ROW_ALT)
+      doc.rect(margin, y - 4, contentWidth, 7, 'F')
+    }
+
+    doc.text(
+      record.clientName || '---',
+      margin + 3,
+      y
+    )
+
+    doc.text(
+      record.price ? `R$ ${record.price}` : '---',
+      160,
+      y
+    )
+
+    y += 7
+  })
+
+
+  doc.setTextColor(...TEXT_MUTED)
+  doc.setFontSize(8)
+
+  doc.text(
+    'Relatório gerado pelo sistema',
+    pageWidth / 2,
+    285,
+    {align:'center'}
+  )
+
+  return doc.output('blob')
+}
+
+
+
 
 export async function generatePDFBlob(
 record: ServiceRecord,

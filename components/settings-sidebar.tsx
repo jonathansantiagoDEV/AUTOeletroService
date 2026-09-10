@@ -61,9 +61,28 @@ const FONT_ORDER: FontScale[] = ['normal', 'medium', 'large', 'xlarge']
 const FONT_LABELS: Record<FontScale, string> = { normal: 'Normal', medium: 'Média', large: 'Grande', xlarge: 'Extra grande' }
 
 function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (value: boolean) => void; label: string }) {
-  return <button type="button" role="switch" aria-checked={checked} aria-label={label} onClick={(e) => { e.stopPropagation(); onChange(!checked) }} className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-primary' : 'bg-muted'}`}>
-    <span className={`absolute top-1 size-5 rounded-full bg-white shadow transition-all ${checked ? 'left-6' : 'left-1'}`} />
-  </button>
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={(e) => { e.stopPropagation(); onChange(!checked) }}
+      className={`relative h-7 w-12 shrink-0 rounded-full border-2 transition-all duration-200 ${
+        checked
+          ? 'border-primary bg-primary'
+          : 'border-primary bg-background'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 size-5 rounded-full shadow transition-all duration-200 ${
+          checked
+            ? 'left-6 bg-white'
+            : 'left-1 bg-primary'
+        }`}
+      />
+    </button>
+  )
 }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
