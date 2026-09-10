@@ -4,6 +4,7 @@ import { Download, Mail, MessageCircle, Share2, X } from 'lucide-react'
 import type { DateFormat, ServiceRecord } from '@/lib/types'
 import { formatDateStr } from '@/lib/types'
 import { generatePDFBlob, pdfFileName } from '@/lib/pdf'
+import { getWorkshopProfile } from '@/lib/workshop-profile'
 import { useToast } from './toast'
 
 interface ShareModalProps {
@@ -33,9 +34,10 @@ export function ShareModal({ record, onClose, dateFormat = 'dd/mm/yyyy' }: Share
   const showToast = useToast()
   if (!record) return null
 
-  function downloadPDF() {
+  async function downloadPDF() {
     try {
-      const blob = generatePDFBlob(record)
+      const profile = await getWorkshopProfile()
+      const blob = generatePDFBlob(record, profile)
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
@@ -54,7 +56,8 @@ export function ShareModal({ record, onClose, dateFormat = 'dd/mm/yyyy' }: Share
   async function shareWhatsApp() {
     // Tenta compartilhar o PDF de verdade primeiro (abre o WhatsApp já com o arquivo anexado).
     try {
-      const blob = generatePDFBlob(record)
+      const profile = await getWorkshopProfile()
+      const blob = generatePDFBlob(record, profile)
       const file = new File([blob], pdfFileName(record), { type: 'application/pdf' })
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
       if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {
@@ -83,7 +86,8 @@ export function ShareModal({ record, onClose, dateFormat = 'dd/mm/yyyy' }: Share
 
   async function shareSystem() {
     try {
-      const blob = generatePDFBlob(record)
+      const profile = await getWorkshopProfile()
+      const blob = generatePDFBlob(record, profile)
       const file = new File([blob], pdfFileName(record), { type: 'application/pdf' })
       const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean }
       if (nav.share && nav.canShare && nav.canShare({ files: [file] })) {

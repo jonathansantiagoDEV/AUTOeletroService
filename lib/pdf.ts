@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf'
 import type { ServiceRecord } from './types'
 import { CATEGORY_LABELS, STATUS_LABELS } from './types'
 import { VALDECI_LOGO_BASE64 } from './logo-base64'
+import type { WorkshopProfile } from './workshop-profile'
 
 // Telefone exibido junto ao logo nos documentos PDF
 const WORKSHOP_PHONE = '(83) 98871-5799'
@@ -15,7 +16,7 @@ const TEXT_MUTED: [number, number, number] = [110, 110, 110]
 const LINE: [number, number, number] = [220, 220, 220]
 const ROW_ALT: [number, number, number] = [248, 248, 248]
 
-export function generatePDFBlob(record: ServiceRecord): Blob {
+export function generatePDFBlob(record: ServiceRecord, profile?: WorkshopProfile | null): Blob {
   const doc = new jsPDF('p', 'mm', 'a4')
   const pageWidth = 210
   const margin = 18
@@ -40,7 +41,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   const headerLogoH = 24
   const headerLogoX = pageWidth - margin - headerLogoW
   const headerLogoY = 5
-  doc.addImage(VALDECI_LOGO_BASE64, 'PNG', headerLogoX, headerLogoY, headerLogoW, headerLogoH)
+  doc.addImage(profile?.logo_url || VALDECI_LOGO_BASE64, 'PNG', headerLogoX, headerLogoY, headerLogoW, headerLogoH)
 
   // Telefone estilizado logo abaixo do logo
   const phonePillW = headerLogoW + 8
@@ -52,7 +53,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(7)
   doc.setFont('helvetica', 'bold')
-  doc.text(WORKSHOP_PHONE, phonePillX + phonePillW / 2, phonePillY + phonePillH / 2 + 1.3, { align: 'center' })
+  doc.text(profile?.phone || WORKSHOP_PHONE, phonePillX + phonePillW / 2, phonePillY + phonePillH / 2 + 1.3, { align: 'center' })
 
   // Título: "ORDEM DE SERVIÇO" (como "ORÇAMENTO #01234")
   doc.setTextColor(...PRIMARY)
@@ -318,7 +319,7 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   doc.setFontSize(8)
   doc.setTextColor(...TEXT_MUTED)
   doc.setFont('helvetica', 'normal')
-  doc.text('Documento gerado por Valdeci Eletricista', pageWidth / 2, y, { align: 'center' })
+  doc.text(profile?.footer_text || `Documento gerado por ${profile?.name || 'Valdeci Eletricista'}`, pageWidth / 2, y, { align: 'center' })
   
   // Data de impressão
   const now = new Date()
@@ -437,7 +438,7 @@ export function generateBulkReportBlob(records: ServiceRecord[]): Blob {
   y += 5
   doc.setFontSize(8)
   doc.setTextColor(...TEXT_MUTED)
-  doc.text('Documento gerado por Valdeci Eletricista', pageWidth / 2, y, { align: 'center' })
+  doc.text(profile?.footer_text || `Documento gerado por ${profile?.name || 'Valdeci Eletricista'}`, pageWidth / 2, y, { align: 'center' })
 
   return doc.output('blob')
 }

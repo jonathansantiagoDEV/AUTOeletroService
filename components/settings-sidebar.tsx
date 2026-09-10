@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import type { AppSettings, FontScale, ServiceCategory } from '@/lib/types'
 import { CATEGORY_LABELS, CATEGORY_ORDER } from '@/lib/types'
+import CompanyProfileSettings from './company-profile-settings'
 
 interface SettingsSidebarProps {
   open: boolean
@@ -116,6 +117,9 @@ export function SettingsSidebar({
         </div>}
 
         <div className="space-y-4">
+          <Section title="Minha empresa">
+            <CompanyProfileSettings />
+          </Section>
           <Section title="Aparência e preferências">
             <SettingRow icon={dark ? Moon : Sun} title="Tema" description={dark ? 'Modo escuro ativo' : 'Modo claro ativo'}><Toggle checked={dark} onChange={() => onToggleDark()} label="Alternar tema" /></SettingRow>
             <div>
