@@ -37,6 +37,60 @@ async function urlToBase64(url:string):Promise<string>{
 }
 
 
+async function makeRoundedImage(src: string, radius = 60): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+
+    img.crossOrigin = 'anonymous'
+
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+
+      const size = Math.max(img.width, img.height)
+
+      canvas.width = size
+      canvas.height = size
+
+      const ctx = canvas.getContext('2d')
+
+      if (!ctx) {
+        reject(new Error('Canvas indisponível'))
+        return
+      }
+
+      ctx.clearRect(0, 0, size, size)
+
+      ctx.beginPath()
+      ctx.arc(
+        size / 2,
+        size / 2,
+        size / 2,
+        0,
+        Math.PI * 2
+      )
+
+      ctx.closePath()
+      ctx.clip()
+
+      const offsetX = (size - img.width) / 2
+      const offsetY = (size - img.height) / 2
+
+      ctx.drawImage(
+        img,
+        offsetX,
+        offsetY
+      )
+
+      resolve(canvas.toDataURL('image/png'))
+    }
+
+    img.onerror = () => reject(new Error('Erro ao carregar imagem'))
+
+    img.src = src
+  })
+}
+
+
 // Relatório resumido mantido para compatibilidade com o aplicativo
 export function generateBulkReportBlob(records: ServiceRecord[]): Blob {
 
@@ -155,7 +209,9 @@ if(profile?.logo_url){
 
 try{
 
-logo = await urlToBase64(profile.logo_url)
+const base64Logo = await urlToBase64(profile.logo_url)
+
+logo = await makeRoundedImage(base64Logo)
 
 }catch{
 
