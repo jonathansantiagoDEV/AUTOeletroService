@@ -107,7 +107,7 @@ export default function CompanyProfileSettings() {
 
   return (
 
-    <div className="space-y-6 rounded-2xl border bg-white p-6 shadow-sm">
+    <div className="space-y-6 rounded-2xl border border-border bg-card p-6 shadow-sm">
 
       <div>
         <h2 className="text-xl font-bold text-primary">
@@ -182,7 +182,7 @@ export default function CompanyProfileSettings() {
             <div className="
               relative flex h-64 items-center
               justify-center rounded-2xl
-              border bg-gray-50 shadow-sm
+              border border-border bg-background shadow-sm
             ">
 
               <img
@@ -201,7 +201,7 @@ export default function CompanyProfileSettings() {
                 }
                 className="
                 absolute right-3 top-3
-                rounded-full bg-white p-2
+                rounded-full bg-card p-2
                 text-red-600 shadow
                 "
               >
@@ -224,10 +224,10 @@ export default function CompanyProfileSettings() {
               Nome da oficina
             </label>
 
-            <div className="flex items-center border rounded-xl mt-2">
-              <Building2 className="mx-3 text-gray-400"/>
+            <div className="flex items-center border border-border rounded-xl mt-2">
+              <Building2 className="mx-3 text-muted-foreground"/>
               <input
-                className="w-full p-3 outline-none"
+                className="w-full bg-transparent p-3 text-foreground outline-none placeholder:text-muted-foreground"
                 value={data.company_name}
                 onChange={e=>
                   setData({...data,company_name:e.target.value})
@@ -242,10 +242,10 @@ export default function CompanyProfileSettings() {
               Telefone
             </label>
 
-            <div className="flex items-center border rounded-xl mt-2">
-              <Phone className="mx-3 text-gray-400"/>
+            <div className="flex items-center border border-border rounded-xl mt-2">
+              <Phone className="mx-3 text-muted-foreground"/>
               <input
-                className="w-full p-3 outline-none"
+                className="w-full bg-transparent p-3 text-foreground outline-none placeholder:text-muted-foreground"
                 value={data.phone}
                 onChange={e=>
                   setData({...data,phone:e.target.value})
@@ -260,10 +260,10 @@ export default function CompanyProfileSettings() {
               Rodapé do PDF
             </label>
 
-            <div className="flex items-center border rounded-xl mt-2">
-              <FileText className="mx-3 text-gray-400"/>
+            <div className="flex items-center border border-border rounded-xl mt-2">
+              <FileText className="mx-3 text-muted-foreground"/>
               <input
-                className="w-full p-3 outline-none"
+                className="w-full bg-transparent p-3 text-foreground outline-none placeholder:text-muted-foreground"
                 value={data.footer_text}
                 onChange={e=>
                   setData({...data,footer_text:e.target.value})

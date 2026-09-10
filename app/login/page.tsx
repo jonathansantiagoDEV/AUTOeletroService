@@ -103,8 +103,16 @@ const SITE_URL = 'https://aut-oeletro-service-vvir.vercel.app'
             </button>
           </div>
 
-          {error && <p className="text-center text-xs font-medium text-red-600">{error}</p>}
-          {message && <p className="text-center text-xs font-medium text-green-600">{message}</p>}
+          {error && (
+            <p className="break-words text-center text-sm font-medium leading-snug text-red-600">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p className="break-words text-center text-sm font-medium leading-snug text-green-600">
+              {message}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -144,6 +152,10 @@ function traduzErro(msg: string) {
   if (msg.includes('Invalid login credentials')) return 'E-mail ou senha incorretos.'
   if (msg.includes('User already registered')) return 'Este e-mail já está cadastrado.'
   if (msg.includes('Password should be')) return 'A senha deve ter pelo menos 6 caracteres.'
+  if (msg.includes('Email not confirmed')) return 'E-mail ainda não confirmado. Verifique sua caixa de entrada.'
+  if (msg.includes('User not found')) return 'Nenhuma conta encontrada com este e-mail.'
+  if (msg.includes('Too many requests')) return 'Muitas tentativas. Aguarde um instante e tente novamente.'
+  if (msg.includes('Email link is invalid or has expired')) return 'O link de confirmação é inválido ou expirou.'
   return msg
 }
 
