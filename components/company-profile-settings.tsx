@@ -34,13 +34,52 @@ export default function CompanyProfileSettings(){
   await supabase.from('workshop_profile').upsert({...data,user_id:userId})
   setMsg('Dados salvos com sucesso')
  }
- return <div className="space-y-3 p-4 border rounded-xl">
-  <h3 className="font-semibold">Minha empresa no PDF</h3>
-  {data.logo_url && <img src={data.logo_url} className="h-20 object-contain"/>}
-  <input type="file" accept="image/*" onChange={e=>e.target.files&&uploadLogo(e.target.files[0])}/>
-  <input className="w-full border p-2 rounded" placeholder="Nome da empresa" value={data.name} onChange={e=>setData({...data,name:e.target.value})}/>
-  <input className="w-full border p-2 rounded" placeholder="Telefone" value={data.phone} onChange={e=>setData({...data,phone:e.target.value})}/>
-  <input className="w-full border p-2 rounded" placeholder="Rodapé do PDF" value={data.footer_text} onChange={e=>setData({...data,footer_text:e.target.value})}/>
-  <button className="px-4 py-2 rounded bg-primary text-white" onClick={save}>{uploading?'Enviando logo...':'Salvar'}</button>
-  <span>{msg}</span>
- </div>
+return (
+  <div className="space-y-3 p-4 border rounded-xl">
+    <h3 className="font-semibold">Minha empresa no PDF</h3>
+
+    {data.logo_url && (
+      <img 
+        src={data.logo_url} 
+        className="h-20 object-contain"
+      />
+    )}
+
+    <input
+      type="file"
+      accept="image/*"
+      onChange={e => e.target.files && uploadLogo(e.target.files[0])}
+    />
+
+    <input
+      className="w-full border p-2 rounded"
+      placeholder="Nome da empresa"
+      value={data.name}
+      onChange={e => setData({...data, name:e.target.value})}
+    />
+
+    <input
+      className="w-full border p-2 rounded"
+      placeholder="Telefone"
+      value={data.phone}
+      onChange={e => setData({...data, phone:e.target.value})}
+    />
+
+    <input
+      className="w-full border p-2 rounded"
+      placeholder="Rodapé do PDF"
+      value={data.footer_text}
+      onChange={e => setData({...data, footer_text:e.target.value})}
+    />
+
+    <button 
+      className="px-4 py-2 rounded bg-primary text-white"
+      onClick={save}
+    >
+      {uploading ? 'Enviando logo...' : 'Salvar'}
+    </button>
+
+    <span>{msg}</span>
+  </div>
+)
+}
