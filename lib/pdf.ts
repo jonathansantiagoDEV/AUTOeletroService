@@ -33,13 +33,27 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   
   // Faixa laranja decorativa (curva no canto direito)
   doc.setFillColor(...ACCENT)
-  doc.triangle(pageWidth - 65, 0, pageWidth, 0, pageWidth, 38, 'F')
+  doc.triangle(pageWidth - 70, 0, pageWidth, 0, pageWidth, 44, 'F')
   
-  // Logo da oficina no canto superior direito (substitui o texto "AUTOSERVIÇOS")
-  const headerLogoW = 22
-  const headerLogoH = 20
-  doc.addImage(VALDECI_LOGO_BASE64, 'PNG', pageWidth - 2 - headerLogoW, 2, headerLogoW, headerLogoH)
-  
+  // Logo da oficina no canto superior direito
+  const headerLogoW = 24
+  const headerLogoH = 24
+  const headerLogoX = pageWidth - margin - headerLogoW
+  const headerLogoY = 5
+  doc.addImage(VALDECI_LOGO_BASE64, 'PNG', headerLogoX, headerLogoY, headerLogoW, headerLogoH)
+
+  // Telefone estilizado logo abaixo do logo
+  const phonePillW = headerLogoW + 8
+  const phonePillX = headerLogoX + headerLogoW / 2 - phonePillW / 2
+  const phonePillY = headerLogoY + headerLogoH + 2.5
+  const phonePillH = 6.5
+  doc.setFillColor(...PRIMARY)
+  doc.roundedRect(phonePillX, phonePillY, phonePillW, phonePillH, 2, 2, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.text(WORKSHOP_PHONE, phonePillX + phonePillW / 2, phonePillY + phonePillH / 2 + 1.3, { align: 'center' })
+
   // Título: "ORDEM DE SERVIÇO" (como "ORÇAMENTO #01234")
   doc.setTextColor(...PRIMARY)
   doc.setFontSize(22)
@@ -65,22 +79,15 @@ export function generatePDFBlob(record: ServiceRecord): Blob {
   const col2X = margin + contentWidth / 2 + 6
   
   // --- Coluna 1: Oficina ---
-  // Logo (substitui o texto "AUTOSERVIÇOS") + telefone logo abaixo
-  const col1LogoW = 34
-  const col1LogoH = 31
-  doc.addImage(VALDECI_LOGO_BASE64, 'PNG', col1X, y - 5, col1LogoW, col1LogoH)
-  y += col1LogoH - 5
-
   doc.setTextColor(...PRIMARY)
-  doc.setFontSize(9)
+  doc.setFontSize(10.5)
   doc.setFont('helvetica', 'bold')
-  doc.text(WORKSHOP_PHONE, col1X, y)
+  doc.text('OFICINA:', col1X, y)
 
-  // Linha separadora
   doc.setDrawColor(...PRIMARY)
   doc.setLineWidth(0.5)
   doc.line(col1X, y + 1.8, col1X + 40, y + 1.8)
-  
+
   y += 7
   doc.setTextColor(...TEXT_DARK)
   doc.setFont('helvetica', 'normal')
