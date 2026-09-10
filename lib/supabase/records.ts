@@ -20,6 +20,7 @@ interface ServiceRecordRow {
   status: string | null
   category: string | null
   signature: string | null
+  warranty_until: string | null
   created_at: string
 }
 
@@ -38,6 +39,7 @@ function rowToRecord(row: ServiceRecordRow): ServiceRecord {
     status: (row.status as ServiceStatus) ?? 'em_andamento',
     category: (row.category as ServiceCategory) ?? null,
     signature: row.signature ?? null,
+    warrantyUntil: row.warranty_until ?? null,
     createdAt: row.created_at,
   }
 }
@@ -58,6 +60,7 @@ function recordToRow(record: ServiceRecord, userId: string) {
     status: record.status,
     category: record.category ?? null,
     signature: record.signature ?? null,
+    warranty_until: record.warrantyUntil ?? null,
     created_at: record.createdAt,
   }
 }
