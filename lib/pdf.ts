@@ -502,7 +502,7 @@ doc.setTextColor(...TEXT_DARK)
 
 
 doc.text(
-'Serviço auto',
+(record.category && CATEGORY_LABELS[record.category]) || 'Serviço geral',
 margin+3,
 y+8
 )

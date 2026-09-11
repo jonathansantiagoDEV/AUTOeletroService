@@ -97,6 +97,7 @@ export async function upsertRecord(record: ServiceRecord): Promise<boolean> {
   const { error } = await supabase.from(TABLE).upsert(recordToRow(record, user.id))
   if (error) {
     console.error('Erro ao salvar registro:', error.message)
+    if (typeof window !== 'undefined') alert('Erro Supabase: ' + error.message)
     return false
   }
   return true

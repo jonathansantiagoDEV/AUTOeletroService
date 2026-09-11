@@ -93,12 +93,17 @@ export default function CompanyProfileSettings() {
 
     if(!userId) return
 
-    await supabase
+    const { error } = await supabase
       .from('workshop_profile')
       .upsert({
         ...data,
         user_id:userId
       })
+
+    if (error) {
+      setMsg('Erro ao salvar: ' + error.message)
+      return
+    }
 
     setMsg('Dados salvos com sucesso')
 
