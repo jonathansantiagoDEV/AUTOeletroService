@@ -98,7 +98,7 @@ export default function CompanyProfileSettings() {
       .upsert({
         ...data,
         user_id:userId
-      })
+      }, { onConflict: 'user_id' })
 
     if (error) {
       setMsg('Erro ao salvar: ' + error.message)
