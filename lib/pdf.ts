@@ -255,13 +255,17 @@ const headerLogoW = 24
 const headerLogoH = 24
 const headerLogoY = 5
 
-// Alinhamos a logo pela borda direita, usando a mesma margem/borda direita
-// da tabela de serviço mais abaixo (faixa azul de SERVIÇO/DESCRIÇÃO/VALOR),
-// para que a logo e o telefone fiquem "rente" a essa linha em vez de perto
-// da borda da página.
+// A pastilha do telefone fica rente à borda direita da tabela (mesma
+// linha azul de SERVIÇO/DESCRIÇÃO/VALOR). A logo, por ser mais estreita
+// que a pastilha, fica centralizada em relação a ela, e não à borda.
 const headerRightX = pageWidth - margin
 
-const headerLogoX = headerRightX - headerLogoW
+const phonePillW = headerLogoW+8
+
+const phonePillX =
+headerRightX - phonePillW
+
+const headerLogoX = phonePillX + phonePillW/2 - headerLogoW/2
 
 
 
@@ -279,12 +283,6 @@ headerLogoH
 
 const phone = profile?.phone || "Telefone não informado"
 
-
-
-const phonePillW = headerLogoW+8
-
-const phonePillX =
-headerRightX - phonePillW
 
 
 const phonePillY =
@@ -577,7 +575,6 @@ descLines,
 descTextX,
 y+rowTopPadding,
 {
-lineHeightFactor: descLineHeight / 9,
 align: descAlign,
 ...(descAlign === 'justify' ? { maxWidth: descMaxWidth } : {}),
 }
