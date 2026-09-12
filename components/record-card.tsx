@@ -65,7 +65,7 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
         </div>
       )}
       <div className="mb-2 flex flex-col gap-2">
-        <div className="flex flex-wrap items-center justify-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-center gap-4">
           {record.clientPhone && (
             <>
               <a
