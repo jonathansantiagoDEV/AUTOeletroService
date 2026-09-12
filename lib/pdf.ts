@@ -235,13 +235,17 @@ doc.rect(0,0,pageWidth,5,'F')
 
 doc.setFillColor(...ACCENT)
 
+const triangleLeftX = pageWidth - 85
+const triangleRightX = pageWidth
+const triangleBottomY = 44
+
 doc.triangle(
-pageWidth-70,
+triangleLeftX,
 0,
-pageWidth,
+triangleRightX,
 0,
-pageWidth,
-44,
+triangleRightX,
+triangleBottomY,
 'F'
 )
 
@@ -249,9 +253,21 @@ pageWidth,
 
 const headerLogoW = 24
 const headerLogoH = 24
-
-const headerLogoX = pageWidth-margin-headerLogoW
 const headerLogoY = 5
+
+// A faixa laranja é um triângulo que fica mais estreito conforme desce.
+// Calculamos aqui em que X a diagonal está na altura onde a logo termina,
+// para a logo (no tamanho original) ficar sempre dentro da área laranja,
+// deslocada o máximo possível para a esquerda sem "vazar" pro fundo azul.
+const logoBottomY = headerLogoY + headerLogoH
+const diagonalXAtLogoBottom =
+triangleLeftX + (triangleRightX - triangleLeftX) * (logoBottomY / triangleBottomY)
+
+const headerLogoX = Math.min(
+diagonalXAtLogoBottom + 1,
+pageWidth - headerLogoW - 2
+)
+
 
 
 
@@ -455,6 +471,9 @@ y=80
 // ==============================
 
 
+const tableTop = y
+
+
 doc.setFillColor(...PRIMARY)
 
 doc.rect(
@@ -496,6 +515,8 @@ y+6
 
 y+=10
 
+const rowTop = y
+
 
 
 doc.setTextColor(...TEXT_DARK)
@@ -508,8 +529,9 @@ y+8
 )
 
 
+const descLines = doc.splitTextToSize(record.noteText || 'Sem descrição', 82)
 doc.text(
-record.noteText || 'Sem descrição',
+descLines,
 80,
 y+8
 )
@@ -523,7 +545,17 @@ y+8
 
 
 
-y+=25
+y += Math.max(25, 8 + descLines.length * 5)
+
+const tableBottom = y
+
+// Contorno da tabela (borda externa, divisória cabeçalho/linha e colunas)
+doc.setDrawColor(190, 190, 190)
+doc.setLineWidth(0.3)
+doc.rect(margin, tableTop, contentWidth, tableBottom - tableTop)
+doc.line(margin, rowTop, margin + contentWidth, rowTop)
+doc.line(80, tableTop, 80, tableBottom)
+doc.line(170, tableTop, 170, tableBottom)
 
 
 
