@@ -161,7 +161,10 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
 
 
       {record.noteText && (
-        <div className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-primary/5 px-3 py-2">
+        <div
+          className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-primary/5 px-3 py-2"
+          style={{ textAlign: record.textStyle.align ?? 'left' }}
+        >
           <span style={styledText} className={usingDefaultColor ? 'text-foreground' : ''}>
             {record.noteText}
           </span>
