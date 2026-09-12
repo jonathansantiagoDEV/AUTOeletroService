@@ -12,6 +12,7 @@ const TEXT_DARK: [number, number, number] = [26, 26, 26]
 const TEXT_MUTED: [number, number, number] = [110, 110, 110]
 const LINE: [number, number, number] = [220, 220, 220]
 const ROW_ALT: [number, number, number] = [248, 248, 248]
+const PRIMARY_BG: [number, number, number] = [242, 246, 250]
 
 
 async function urlToBase64(url:string):Promise<string>{
@@ -363,114 +364,89 @@ margin,
 
 
 
-y = 50
-
-
-
 // ==============================
-// OFICINA
+// OFICINA / CLIENTE — cartões
 // ==============================
 
 
+const infoCardY = 46
+const infoCardHeight = 34
+const infoCardRadius = 3
+const infoCardPaddingX = 7
+
+const leftCardX = margin
+const leftCardWidth = 84
+
+const rightCardX = 110
+const rightCardWidth = (margin + contentWidth) - rightCardX
+
+
+// Fundo com leve tom da cor primária e cantos arredondados
+doc.setFillColor(...PRIMARY_BG)
+doc.roundedRect(leftCardX, infoCardY, leftCardWidth, infoCardHeight, infoCardRadius, infoCardRadius, 'F')
+doc.roundedRect(rightCardX, infoCardY, rightCardWidth, infoCardHeight, infoCardRadius, infoCardRadius, 'F')
+
+
+// Faixa de destaque na lateral esquerda de cada cartão
+doc.setFillColor(...PRIMARY)
+doc.rect(leftCardX, infoCardY, 1.3, infoCardHeight, 'F')
+doc.rect(rightCardX, infoCardY, 1.3, infoCardHeight, 'F')
+
+
+// Títulos OFICINA / CLIENTE
 doc.setTextColor(...PRIMARY)
-
-doc.setFontSize(10)
-
+doc.setFontSize(11)
 doc.setFont('helvetica','bold')
 
-doc.text(
-'OFICINA:',
-margin,
-y
-)
+doc.text('OFICINA', leftCardX + infoCardPaddingX, infoCardY + 9)
+doc.text('CLIENTE', rightCardX + infoCardPaddingX, infoCardY + 9)
 
 
-y+=8
-
-
-doc.setTextColor(...TEXT_DARK)
-
-doc.setFontSize(9.5)
-
-doc.setFont('helvetica','normal')
-
-
+// Corpo do cartão OFICINA
 const oficinaNome =
 profile?.company_name ||
 'Empresa não configurada'
 
-
-doc.text(
-oficinaNome,
-margin,
-y
-)
-
-
-y+=6
-
-
-doc.text(
-'Documento de serviço',
-margin,
-y
-)
-
-
-y+=6
-
-
-doc.text(
-`Gerado em ${dateStr}`,
-margin,
-y
-)
-
-
-
-// ==============================
-// CLIENTE
-// ==============================
-
-
-const clienteX = 110
-
-
-doc.setTextColor(...PRIMARY)
-
-doc.setFont('helvetica','bold')
-
-doc.text(
-'CLIENTE:',
-clienteX,
-50
-)
-
+let leftLineY = infoCardY + 17
 
 doc.setTextColor(...TEXT_DARK)
+doc.setFontSize(10.5)
+doc.setFont('helvetica','bold')
+doc.text(oficinaNome, leftCardX + infoCardPaddingX, leftLineY)
 
+leftLineY += 6.5
+
+doc.setTextColor(...TEXT_MUTED)
+doc.setFontSize(9)
 doc.setFont('helvetica','normal')
+doc.text('Documento de serviço', leftCardX + infoCardPaddingX, leftLineY)
 
-doc.text(
-record.clientName || '---',
-clienteX,
-58
-)
+leftLineY += 5.5
 
+doc.text(`Gerado em ${dateStr}`, leftCardX + infoCardPaddingX, leftLineY)
+
+
+// Corpo do cartão CLIENTE
+let rightLineY = infoCardY + 17
+
+doc.setTextColor(...TEXT_DARK)
+doc.setFontSize(10.5)
+doc.setFont('helvetica','bold')
+doc.text(record.clientName || '---', rightCardX + infoCardPaddingX, rightLineY)
 
 if(record.plate){
 
-doc.text(
-`Placa: ${record.plate}`,
-clienteX,
-64
-)
+rightLineY += 6.5
+
+doc.setTextColor(...TEXT_MUTED)
+doc.setFontSize(9)
+doc.setFont('helvetica','normal')
+doc.text(`Placa: ${record.plate}`, rightCardX + infoCardPaddingX, rightLineY)
 
 }
 
 
-
-y=80
+y = infoCardY + infoCardHeight + 8
 
 
 
