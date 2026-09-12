@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Bold, Camera, Image as GalleryIcon, Italic, Mic, Palette, PenLine, Type, Underline, X } from 'lucide-react'
+import { AlignCenter, AlignJustify, AlignLeft, AlignRight, Bold, Camera, Image as GalleryIcon, Italic, Mic, Palette, PenLine, Type, Underline, X } from 'lucide-react'
 import type { ServiceCategory, ServiceRecord, ServiceStatus, TextStyle } from '@/lib/types'
 import { CATEGORY_LABELS, CATEGORY_ORDER, DEFAULT_TEXT_STYLE, STATUS_COLORS, STATUS_LABELS } from '@/lib/types'
 import { generateId as genId } from '@/lib/storage'
@@ -67,7 +67,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
       setPrice(editing.price)
       setNoteText(editing.noteText)
       setPhotos(editing.photos)
-      setStyle(editing.textStyle ?? DEFAULT_TEXT_STYLE)
+      setStyle({ ...DEFAULT_TEXT_STYLE, ...(editing.textStyle ?? {}) })
       setStatus(editing.status ?? 'em_andamento')
       setCategory(editing.category ?? null)
       setSignature(editing.signature ?? null)
@@ -316,6 +316,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
     fontWeight: style.isBold ? 700 : 400,
     fontStyle: style.isItalic ? 'italic' : 'normal',
     textDecoration: style.isUnderline ? 'underline' : 'none',
+    textAlign: style.align,
   }
 
   return (
@@ -484,6 +485,35 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
               aria-label="Sublinhado"
             >
               <Underline className="size-4" />
+            </button>
+            <div className="mx-0.5 h-5 w-px bg-border" />
+            <button
+              onClick={() => setStyle((s) => ({ ...s, align: 'left' }))}
+              className={`rounded-md p-1.5 ${style.align === 'left' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-card'}`}
+              aria-label="Alinhar à esquerda"
+            >
+              <AlignLeft className="size-4" />
+            </button>
+            <button
+              onClick={() => setStyle((s) => ({ ...s, align: 'center' }))}
+              className={`rounded-md p-1.5 ${style.align === 'center' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-card'}`}
+              aria-label="Centralizar"
+            >
+              <AlignCenter className="size-4" />
+            </button>
+            <button
+              onClick={() => setStyle((s) => ({ ...s, align: 'right' }))}
+              className={`rounded-md p-1.5 ${style.align === 'right' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-card'}`}
+              aria-label="Alinhar à direita"
+            >
+              <AlignRight className="size-4" />
+            </button>
+            <button
+              onClick={() => setStyle((s) => ({ ...s, align: 'justify' }))}
+              className={`rounded-md p-1.5 ${style.align === 'justify' ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-card'}`}
+              aria-label="Justificar"
+            >
+              <AlignJustify className="size-4" />
             </button>
             <button
               onClick={() => {

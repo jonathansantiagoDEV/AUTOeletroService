@@ -87,7 +87,10 @@ export function ViewRecordModal({ record, onClose, onEdit, onShare, onZoomPhoto,
           </div>
 
           {record.noteText && (
-            <div className="whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background p-3">
+            <div
+              className="whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-background p-3"
+              style={{ textAlign: record.textStyle.align ?? 'left' }}
+            >
               <span style={styledText} className={usingDefaultColor ? 'text-foreground' : ''}>
                 {record.noteText}
               </span>

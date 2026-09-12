@@ -255,20 +255,13 @@ const headerLogoW = 24
 const headerLogoH = 24
 const headerLogoY = 5
 
-// A faixa laranja é um triângulo que fica mais estreito conforme desce.
-// Calculamos aqui em que X a diagonal está na altura onde a logo termina,
-// para a logo (no tamanho original) ficar sempre dentro da área laranja,
-// deslocada o máximo possível para a esquerda. O segundo limite garante que
-// nem a logo nem a pastilha do telefone (que é um pouco mais larga) vazem
-// para fora da página.
-const logoBottomY = headerLogoY + headerLogoH
-const diagonalXAtLogoBottom =
-triangleLeftX + (triangleRightX - triangleLeftX) * (logoBottomY / triangleBottomY)
+// Alinhamos a logo pela borda direita, usando a mesma margem/borda direita
+// da tabela de serviço mais abaixo (faixa azul de SERVIÇO/DESCRIÇÃO/VALOR),
+// para que a logo e o telefone fiquem "rente" a essa linha em vez de perto
+// da borda da página.
+const headerRightX = pageWidth - margin
 
-const headerLogoX = Math.min(
-diagonalXAtLogoBottom + 1,
-pageWidth - headerLogoW - 8
-)
+const headerLogoX = headerRightX - headerLogoW
 
 
 
@@ -291,7 +284,7 @@ const phone = profile?.phone || "Telefone não informado"
 const phonePillW = headerLogoW+8
 
 const phonePillX =
-headerLogoX + headerLogoW/2 - phonePillW/2
+headerRightX - phonePillW
 
 
 const phonePillY =
@@ -329,16 +322,23 @@ align:'center'
 )
 
 
+doc.setFont('helvetica','normal')
+
+
 
 doc.setTextColor(...PRIMARY)
 
 doc.setFontSize(22)
+
+doc.setFont('helvetica','bold')
 
 doc.text(
 'ORDEM DE SERVIÇO',
 margin,
 28
 )
+
+doc.setFont('helvetica','normal')
 
 
 
@@ -378,6 +378,8 @@ doc.setTextColor(...PRIMARY)
 
 doc.setFontSize(10)
 
+doc.setFont('helvetica','bold')
+
 doc.text(
 'OFICINA:',
 margin,
@@ -391,6 +393,8 @@ y+=8
 doc.setTextColor(...TEXT_DARK)
 
 doc.setFontSize(9.5)
+
+doc.setFont('helvetica','normal')
 
 
 const oficinaNome =
@@ -436,6 +440,8 @@ const clienteX = 110
 
 doc.setTextColor(...PRIMARY)
 
+doc.setFont('helvetica','bold')
+
 doc.text(
 'CLIENTE:',
 clienteX,
@@ -444,6 +450,8 @@ clienteX,
 
 
 doc.setTextColor(...TEXT_DARK)
+
+doc.setFont('helvetica','normal')
 
 doc.text(
 record.clientName || '---',
@@ -497,6 +505,8 @@ doc.setTextColor(255,255,255)
 
 doc.setFontSize(9)
 
+doc.setFont('helvetica','bold')
+
 
 doc.text(
 'SERVIÇO',
@@ -531,31 +541,59 @@ const rowTop = y
 
 doc.setTextColor(...TEXT_DARK)
 
+doc.setFont('helvetica','normal')
+doc.setFontSize(9)
+
+const rowTopPadding = 8
+const rowBottomPadding = 8
+const descLineHeight = 5.2
+
 
 doc.text(
 (record.category && CATEGORY_LABELS[record.category]) || 'Serviço geral',
 margin+3,
-y+8
+y+rowTopPadding
 )
 
 
-const descLines = doc.splitTextToSize(record.noteText || 'Sem descrição', 82)
+// Espaço interno dos dois lados da coluna de descrição para o texto
+// não encostar nas linhas divisórias da tabela
+const descX = col2X + 4
+const descRight = col3X - 4
+const descMaxWidth = (col3X - col2X) - 8
+
+const descAlign = record.textStyle?.align || 'left'
+
+let descTextX = descX
+if (descAlign === 'center') {
+  descTextX = (col2X + col3X) / 2
+} else if (descAlign === 'right') {
+  descTextX = descRight
+}
+
+const descLines = doc.splitTextToSize(record.noteText || 'Sem descrição', descMaxWidth)
 doc.text(
 descLines,
-80,
-y+8
+descTextX,
+y+rowTopPadding,
+{
+lineHeightFactor: descLineHeight / 9,
+align: descAlign,
+...(descAlign === 'justify' ? { maxWidth: descMaxWidth } : {}),
+}
 )
 
 
 doc.text(
 record.price ? `R$ ${record.price}` : '---',
-170,
-y+8
+(col3X + tableRight) / 2,
+y+rowTopPadding,
+{ align: 'center' }
 )
 
 
 
-y += Math.max(25, 8 + descLines.length * 5)
+y += Math.max(25, rowTopPadding + descLines.length * descLineHeight + rowBottomPadding)
 
 const tableBottom = y
 
@@ -584,6 +622,8 @@ doc.setTextColor(255,255,255)
 
 doc.setFontSize(13)
 
+doc.setFont('helvetica','bold')
+
 
 doc.text(
 `VALOR TOTAL: ${record.price ? `R$ ${record.price}`:'---'}`,
@@ -604,6 +644,8 @@ align:'center'
 doc.setTextColor(...TEXT_MUTED)
 
 doc.setFontSize(8)
+
+doc.setFont('helvetica','normal')
 
 
 

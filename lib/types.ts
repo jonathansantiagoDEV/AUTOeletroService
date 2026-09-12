@@ -1,3 +1,5 @@
+export type TextAlign = 'left' | 'center' | 'right' | 'justify'
+
 export interface TextStyle {
   fontFamily: string
   isBold: boolean
@@ -5,6 +7,7 @@ export interface TextStyle {
   isUnderline: boolean
   color: string
   fontSize: number
+  align: TextAlign
 }
 
 export type ServiceStatus = 'em_andamento' | 'concluido' | 'aguardando_peca'
@@ -123,6 +126,7 @@ export const DEFAULT_TEXT_STYLE: TextStyle = {
   isUnderline: false,
   color: '#1A1A1A',
   fontSize: 16,
+  align: 'left',
 }
 
 export type FontScale = 'normal' | 'medium' | 'large' | 'xlarge'
