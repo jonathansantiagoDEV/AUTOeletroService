@@ -50,6 +50,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
   const [recording, setRecording] = useState(false)
   const recognitionRef = useRef<any>(null)
   const dictationBaseRef = useRef('')
+  const shouldListenRef = useRef(false)
   const [signatureOpen, setSignatureOpen] = useState(false)
   const [showFonts, setShowFonts] = useState(false)
   const [showColors, setShowColors] = useState(false)
@@ -112,17 +113,21 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
   // Para a gravação de voz automaticamente se o modal for fechado no meio do ditado
   useEffect(() => {
     if (!open && recognitionRef.current) {
+      shouldListenRef.current = false
       recognitionRef.current.stop()
     }
   }, [open])
 
   // Ditado por voz: em vez de digitar, o usuário fala e o texto vai sendo
   // transcrito direto no campo de observação/descrição do serviço.
-  function toggleDictation() {
-    if (recording) {
-      recognitionRef.current?.stop()
-      return
-    }
+  //
+  // Importante: usamos "continuous = false" e reiniciamos manualmente a cada
+  // trecho de fala (em vez de "continuous = true"). O modo contínuo nativo do
+  // navegador (principalmente no Chrome Android) às vezes reinicia a sessão de
+  // reconhecimento sozinho, e ao reiniciar ele reenvia como "final" um trecho
+  // que já tinha sido transcrito antes — é isso que fazia o texto repetir.
+  // Encadeando sessões curtas manualmente, cada uma só contém fala nova.
+  function startRecognitionSession() {
     const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition
     if (!SpeechRecognition) {
       showToast('❌ Seu navegador não suporta ditado por voz', 'error')
@@ -130,9 +135,8 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
     }
     const recognition = new SpeechRecognition()
     recognition.lang = 'pt-BR'
-    recognition.continuous = true
+    recognition.continuous = false
     recognition.interimResults = true
-    dictationBaseRef.current = noteText
 
     recognition.onresult = (event: any) => {
       let finalChunk = ''
@@ -147,17 +151,37 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
       }
       setNoteText(`${dictationBaseRef.current}${interimChunk ? ' ' + interimChunk : ''}`.trim())
     }
-    recognition.onerror = () => {
-      setRecording(false)
-      showToast('❌ Não foi possível captar o áudio', 'error')
+    recognition.onerror = (event: any) => {
+      // "no-speech" só significa que ficou em silêncio um instante — não é erro real,
+      // deixamos o onend cuidar de reiniciar a escuta normalmente.
+      if (event?.error !== 'no-speech') {
+        shouldListenRef.current = false
+        setRecording(false)
+        showToast('❌ Não foi possível captar o áudio', 'error')
+      }
     }
     recognition.onend = () => {
-      setRecording(false)
+      if (shouldListenRef.current) {
+        startRecognitionSession()
+      } else {
+        setRecording(false)
+      }
     }
 
     recognitionRef.current = recognition
     recognition.start()
+  }
+
+  function toggleDictation() {
+    if (recording) {
+      shouldListenRef.current = false
+      recognitionRef.current?.stop()
+      return
+    }
+    dictationBaseRef.current = noteText
+    shouldListenRef.current = true
     setRecording(true)
+    startRecognitionSession()
   }
 
   function handleFiles(files: FileList | null) {
@@ -523,7 +547,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
             </div>
           )}
 
-          <div className={`relative ${recording ? 'mb-4' : ''}`}>
+          <div className="space-y-1.5">
             <textarea
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
@@ -531,7 +555,7 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
               placeholder="Descrição do serviço..."
               rows={4}
               style={editorStyle}
-              className={`w-full resize-y rounded-lg border bg-background px-3 py-2.5 pr-12 outline-none focus:border-primary ${
+              className={`w-full resize-y rounded-lg border bg-background px-3 py-2.5 outline-none focus:border-primary ${
                 recording ? 'border-danger' : 'border-border'
               } ${usingDefaultColor ? 'text-foreground' : ''}`}
             />
@@ -540,15 +564,33 @@ export function RecordEditorModal({ open, editing, initialPhotos, userId, onClos
               onClick={toggleDictation}
               aria-label={recording ? 'Parar ditado por voz' : 'Falar a observação em vez de digitar'}
               title={recording ? 'Parar ditado por voz' : 'Falar a observação em vez de digitar'}
-              className={`absolute bottom-2.5 right-2.5 flex size-9 items-center justify-center rounded-full transition ${
-                recording ? 'animate-pulse bg-danger text-white' : 'bg-primary text-primary-foreground hover:bg-primary-dark'
+              className={`flex items-center gap-2 self-start rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                recording
+                  ? 'border-danger bg-danger/10 text-danger'
+                  : 'border-border bg-background text-muted-foreground hover:bg-muted'
               }`}
             >
-              <Mic className="size-4" />
+              <span
+                className={`flex size-6 shrink-0 items-center justify-center rounded-full ${
+                  recording ? 'bg-danger text-white' : 'bg-primary text-primary-foreground'
+                }`}
+              >
+                <Mic className="size-3.5" />
+              </span>
+              {recording ? (
+                <span className="flex items-center gap-2">
+                  <span className="flex items-end gap-0.5">
+                    <span className="h-2 w-0.5 animate-pulse rounded-full bg-danger [animation-delay:0ms]" />
+                    <span className="h-3 w-0.5 animate-pulse rounded-full bg-danger [animation-delay:150ms]" />
+                    <span className="h-1.5 w-0.5 animate-pulse rounded-full bg-danger [animation-delay:300ms]" />
+                    <span className="h-3.5 w-0.5 animate-pulse rounded-full bg-danger [animation-delay:450ms]" />
+                  </span>
+                  Ouvindo...
+                </span>
+              ) : (
+                'Ditar por voz'
+              )}
             </button>
-            {recording && (
-              <span className="absolute -bottom-5 right-1 text-xs font-semibold text-danger">Ouvindo...</span>
-            )}
           </div>
 
           {/* Fotos */}
