@@ -235,7 +235,7 @@ doc.rect(0,0,pageWidth,5,'F')
 
 doc.setFillColor(...ACCENT)
 
-const triangleLeftX = pageWidth - 85
+const triangleLeftX = pageWidth - 100
 const triangleRightX = pageWidth
 const triangleBottomY = 44
 
@@ -258,14 +258,16 @@ const headerLogoY = 5
 // A faixa laranja é um triângulo que fica mais estreito conforme desce.
 // Calculamos aqui em que X a diagonal está na altura onde a logo termina,
 // para a logo (no tamanho original) ficar sempre dentro da área laranja,
-// deslocada o máximo possível para a esquerda sem "vazar" pro fundo azul.
+// deslocada o máximo possível para a esquerda. O segundo limite garante que
+// nem a logo nem a pastilha do telefone (que é um pouco mais larga) vazem
+// para fora da página.
 const logoBottomY = headerLogoY + headerLogoH
 const diagonalXAtLogoBottom =
 triangleLeftX + (triangleRightX - triangleLeftX) * (logoBottomY / triangleBottomY)
 
 const headerLogoX = Math.min(
 diagonalXAtLogoBottom + 1,
-pageWidth - headerLogoW - 2
+pageWidth - headerLogoW - 8
 )
 
 
@@ -473,6 +475,11 @@ y=80
 
 const tableTop = y
 
+const col1X = margin
+const col2X = 80
+const col3X = 170
+const tableRight = margin + contentWidth
+
 
 doc.setFillColor(...PRIMARY)
 
@@ -493,22 +500,25 @@ doc.setFontSize(9)
 
 doc.text(
 'SERVIÇO',
-margin+3,
-y+6
+(col1X + col2X) / 2,
+y+6,
+{ align: 'center' }
 )
 
 
 doc.text(
 'DESCRIÇÃO',
-80,
-y+6
+(col2X + col3X) / 2,
+y+6,
+{ align: 'center' }
 )
 
 
 doc.text(
 'VALOR',
-170,
-y+6
+(col3X + tableRight) / 2,
+y+6,
+{ align: 'center' }
 )
 
 
@@ -553,9 +563,9 @@ const tableBottom = y
 doc.setDrawColor(190, 190, 190)
 doc.setLineWidth(0.3)
 doc.rect(margin, tableTop, contentWidth, tableBottom - tableTop)
-doc.line(margin, rowTop, margin + contentWidth, rowTop)
-doc.line(80, tableTop, 80, tableBottom)
-doc.line(170, tableTop, 170, tableBottom)
+doc.line(margin, rowTop, tableRight, rowTop)
+doc.line(col2X, tableTop, col2X, tableBottom)
+doc.line(col3X, tableTop, col3X, tableBottom)
 
 
 
