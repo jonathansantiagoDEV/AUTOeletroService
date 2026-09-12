@@ -64,29 +64,8 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
           <Bell className="size-3.5 animate-pulse-dot" /> Chegou a hora do agendamento!
         </div>
       )}
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5 break-words text-base font-bold text-foreground">
-            <UserCircle className="inline size-4 text-primary" />
-            {record.clientName || 'Cliente'}
-            <span
-              className="flex size-5 shrink-0 items-center justify-center rounded-full text-white"
-              style={{ backgroundColor: STATUS_COLORS[record.status ?? 'em_andamento'] }}
-              title={STATUS_LABELS_SHORT[record.status ?? 'em_andamento']}
-            >
-              {(() => {
-                const Icon = STATUS_ICONS[record.status ?? 'em_andamento']
-                return <Icon className="size-3" />
-              })()}
-            </span>
-          </div>
-          {record.category && (
-            <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary">
-              {CATEGORY_LABELS[record.category]}
-            </span>
-          )}
-        </div>
-        <div className="flex shrink-0 gap-1.5">
+      <div className="mb-2 flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
           {record.clientPhone && (
             <>
               <a
@@ -140,10 +119,23 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
             <Share2 className="size-4" />
           </button>
         </div>
+
+        <div className="flex items-start gap-2">
+          <UserCircle className="mt-0.5 size-5 shrink-0 text-primary" />
+          <span className="break-words text-base font-bold leading-snug text-foreground">
+            {record.clientName || 'Cliente'}
+          </span>
+        </div>
+
+        {record.category && (
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/15 px-2.5 py-1 text-xs font-bold text-primary">
+            {CATEGORY_LABELS[record.category]}
+          </span>
+        )}
       </div>
 
-      {(record.plate || record.price) && (
-        <div className="my-1.5 flex flex-wrap gap-1.5">
+      {(record.plate || record.price || record.status) && (
+        <div className="my-1.5 flex flex-wrap items-center gap-1.5">
           {record.plate && (
             <span className="inline-flex items-center gap-1 rounded-full bg-primary px-3 py-0.5 text-sm font-bold text-primary-foreground">
               <Hash className="size-3.5" /> {record.plate}
@@ -154,8 +146,19 @@ export function RecordCard({ record, onView, onEdit, onDelete, onShare, onZoomPh
               <DollarSign className="size-3.5" /> {record.price}
             </span>
           )}
+          <span
+            className="inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-sm font-bold text-white"
+            style={{ backgroundColor: STATUS_COLORS[record.status ?? 'em_andamento'] }}
+          >
+            {(() => {
+              const Icon = STATUS_ICONS[record.status ?? 'em_andamento']
+              return <Icon className="size-3.5" />
+            })()}
+            {STATUS_LABELS_SHORT[record.status ?? 'em_andamento']}
+          </span>
         </div>
       )}
+
 
       {record.noteText && (
         <div className="my-1.5 max-h-[100px] overflow-hidden whitespace-pre-wrap break-words rounded-lg border-l-[3px] border-primary bg-primary/5 px-3 py-2">
